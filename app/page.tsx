@@ -1,15 +1,12 @@
+'use client';
+
+import Header from '@/components/Header';
+
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white border-b sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-green-600">BLAQMART</h1>
-          <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-            Sign In
-          </button>
-        </div>
-      </header>
+      <Header />
 
       {/* Hero */}
       <section className="bg-gradient-to-r from-green-600 to-green-700 text-white py-16">
