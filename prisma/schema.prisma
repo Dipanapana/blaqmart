@@ -1,0 +1,181 @@
+// BLAQMART Database Schema
+// 30-Day MVP Sprint
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== USER SYSTEM ====================
+
+model User {
+  id        String   @id @default(uuid())
+  phone     String   @unique
+  name      String?
+  role      Role     @default(CUSTOMER)
+  createdAt DateTime @default(now())
+
+  // Relations
+  stores     Store[]  @relation("VendorStores")
+  orders     Order[]  @relation("CustomerOrders")
+  deliveries Order[]  @relation("DriverDeliveries")
+}
+
+enum Role {
+  CUSTOMER
+  VENDOR
+  DRIVER
+  ADMIN
+}
+
+// ==================== STORE & SUBSCRIPTIONS ====================
+
+model Store {
+  id                String           @id @default(uuid())
+  name              String
+  address           String
+  phone             String
+  latitude          Float
+  longitude         Float
+  isActive          Boolean          @default(true)
+  vendorId          String
+  subscriptionTier  SubscriptionTier @default(FREE)
+  subscriptionEndsAt DateTime?
+  featuredUntil     DateTime?
+  createdAt         DateTime         @default(now())
+
+  // Relations
+  vendor        User           @relation("VendorStores", fields: [vendorId], references: [id])
+  products      Product[]
+  orders        Order[]
+  subscriptions Subscription[]
+}
+
+enum SubscriptionTier {
+  FREE
+  PREMIUM
+  ENTERPRISE
+}
+
+model Subscription {
+  id               String        @id @default(uuid())
+  storeId          String
+  tier             SubscriptionTier
+  amount           Float
+  startDate        DateTime      @default(now())
+  endDate          DateTime
+  isActive         Boolean       @default(true)
+  paymentStatus    PaymentStatus @default(PENDING)
+  payfastPaymentId String?
+  createdAt        DateTime      @default(now())
+
+  // Relations
+  store Store @relation(fields: [storeId], references: [id])
+}
+
+// ==================== PRODUCTS ====================
+
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  price       Float
+  imageUrl    String?
+  stock       Int      @default(0)
+  isActive    Boolean  @default(true)
+  storeId     String
+  createdAt   DateTime @default(now())
+
+  // Relations
+  store      Store       @relation(fields: [storeId], references: [id])
+  orderItems OrderItem[]
+}
+
+// ==================== ORDERS ====================
+
+model Order {
+  id             String        @id @default(uuid())
+  orderNumber    String        @unique
+
+  // Customer info
+  customerId     String
+  customerPhone  String
+  deliveryAddress String
+  deliveryLat    Float
+  deliveryLng    Float
+
+  // Store info
+  storeId        String
+
+  // Pricing
+  subtotal       Float
+  deliveryFee    Float         @default(25.00)
+  total          Float
+
+  // Status
+  status         OrderStatus   @default(PENDING)
+  paymentStatus  PaymentStatus @default(PENDING)
+  paymentMethod  String?
+
+  // Fulfillment
+  driverId       String?
+  estimatedTime  Int?          // minutes
+
+  // Timestamps
+  createdAt      DateTime      @default(now())
+  confirmedAt    DateTime?
+  completedAt    DateTime?
+
+  // Relations
+  customer       User          @relation("CustomerOrders", fields: [customerId], references: [id])
+  store          Store         @relation(fields: [storeId], references: [id])
+  driver         User?         @relation("DriverDeliveries", fields: [driverId], references: [id])
+  items          OrderItem[]
+  deliveryProof  DeliveryProof?
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  READY
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  productId String
+  quantity  Int
+  price     Float
+
+  // Relations
+  order   Order   @relation(fields: [orderId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+}
+
+// ==================== DELIVERY ====================
+
+model DeliveryProof {
+  id          String   @id @default(uuid())
+  orderId     String   @unique
+  photoUrl    String
+  notes       String?
+  deliveredAt DateTime @default(now())
+
+  // Relations
+  order Order @relation(fields: [orderId], references: [id])
+}
