@@ -7,6 +7,7 @@ import Link from 'next/link';
 import Header from '@/components/Header';
 import { ArrowLeft, Store, ShoppingCart, Loader2, MapPin, Phone } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
+import { useCartStore } from '@/lib/store/cart-store';
 
 interface Product {
   id: string;
@@ -31,6 +32,8 @@ export default function ProductDetailsPage() {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
+  const addItem = useCartStore((state) => state.addItem);
+  const updateQuantity = useCartStore((state) => state.updateQuantity);
 
   useEffect(() => {
     async function fetchProduct() {
@@ -55,8 +58,27 @@ export default function ProductDetailsPage() {
   }, [params.id]);
 
   const handleAddToCart = () => {
-    // TODO: Implement cart functionality
-    alert(`Added ${quantity}x ${product?.name} to cart!`);
+    if (!product) return;
+
+    // Add item to cart
+    addItem({
+      id: crypto.randomUUID(),
+      productId: product.id,
+      name: product.name,
+      price: product.price,
+      imageUrl: product.imageUrl,
+      stock: product.stock,
+      storeId: product.store.id,
+      storeName: product.store.name,
+    });
+
+    // Update quantity if more than 1 selected
+    if (quantity > 1) {
+      updateQuantity(product.id, quantity);
+    }
+
+    // Redirect to cart
+    router.push('/cart');
   };
 
   if (loading) {

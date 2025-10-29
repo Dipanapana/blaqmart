@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ShoppingCart, User, LogOut } from 'lucide-react';
+import { User, LogOut } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import LoginModal from './auth/LoginModal';
+import CartButton from './cart/CartButton';
 
 export default function Header() {
   const { user, loading, signOut } = useAuth();
@@ -28,17 +29,7 @@ export default function Header() {
             {/* Navigation */}
             <div className="flex items-center gap-4">
               {/* Cart */}
-              <Link
-                href="/cart"
-                className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                aria-label="Shopping cart"
-              >
-                <ShoppingCart className="w-6 h-6 text-gray-700" />
-                {/* Cart badge - will be dynamic later */}
-                <span className="absolute -top-1 -right-1 bg-green-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold">
-                  0
-                </span>
-              </Link>
+              <CartButton />
 
               {/* Auth buttons */}
               {loading ? (

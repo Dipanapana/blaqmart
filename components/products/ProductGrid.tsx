@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import ProductCard from './ProductCard';
 import { Loader2, Search } from 'lucide-react';
+import { useCartStore } from '@/lib/store/cart-store';
 
 interface Product {
   id: string;
@@ -28,6 +29,7 @@ export default function ProductGrid({ initialProducts = [] }: ProductGridProps) 
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const addItem = useCartStore((state) => state.addItem);
 
   // Debounce search
   useEffect(() => {
@@ -62,9 +64,16 @@ export default function ProductGrid({ initialProducts = [] }: ProductGridProps) 
   }, [debouncedSearch]);
 
   const handleAddToCart = (product: Product) => {
-    // TODO: Implement cart functionality
-    console.log('Add to cart:', product);
-    alert(`Added ${product.name} to cart!`);
+    addItem({
+      id: crypto.randomUUID(),
+      productId: product.id,
+      name: product.name,
+      price: product.price,
+      imageUrl: product.imageUrl,
+      stock: product.stock,
+      storeId: product.store.id,
+      storeName: product.store.name,
+    });
   };
 
   return (
