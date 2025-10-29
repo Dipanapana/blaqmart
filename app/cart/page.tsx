@@ -26,8 +26,8 @@ export default function CartPage() {
       return;
     }
 
-    // TODO: Navigate to checkout page (Weekend implementation)
-    alert('Checkout coming this weekend! 🎉');
+    // Navigate to checkout page
+    router.push('/checkout');
   };
 
   const handleClearCart = () => {
