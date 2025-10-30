@@ -61,6 +61,9 @@ export async function POST(request: NextRequest) {
         isApproved: true,
         isActive: true,
       },
+      include: {
+        user: true,
+      },
     });
 
     // Update user role to DRIVER
@@ -71,7 +74,15 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // TODO: Send SMS notification to driver about approval
+    // Send driver approval notification (async, don't wait)
+    try {
+      const { notifyDriverApproved } = await import('@/lib/notifications');
+      notifyDriverApproved(driverProfile.user.phone, {
+        driverName: driverProfile.name,
+      }).catch(console.error);
+    } catch (notifError) {
+      console.error('Failed to send driver approval notification:', notifError);
+    }
 
     return NextResponse.json({
       success: true,

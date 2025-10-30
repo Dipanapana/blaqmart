@@ -110,7 +110,13 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // TODO: Send SMS notification to customer with driver info and ETA
+    // Send notifications (async, don't wait)
+    try {
+      const { notifyDriverAssignment } = await import('@/lib/notifications');
+      notifyDriverAssignment(updatedOrder).catch(console.error);
+    } catch (notifError) {
+      console.error('Failed to send driver assignment notifications:', notifError);
+    }
 
     return NextResponse.json({
       success: true,

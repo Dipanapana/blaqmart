@@ -85,20 +85,30 @@ export async function POST(request: NextRequest) {
     const paymentStatus = data.payment_status;
 
     if (paymentStatus === 'COMPLETE') {
-      // Payment successful
-      await prisma.order.update({
+      // Payment successful - update order with full details for notifications
+      const updatedOrder = await prisma.order.update({
         where: { id: orderId },
         data: {
           paymentStatus: 'PAID',
           status: 'CONFIRMED',
           confirmedAt: new Date(),
+          estimatedTime: 45,
+        },
+        include: {
+          customer: true,
+          store: true,
         },
       });
 
       console.log('Payment confirmed for order:', order.orderNumber);
 
-      // TODO: Send SMS notification to customer and vendor
-      // TODO: Send email confirmation
+      // Send notifications (async, don't wait)
+      try {
+        const { notifyOrderConfirmed } = await import('@/lib/notifications');
+        notifyOrderConfirmed(updatedOrder).catch(console.error);
+      } catch (notifError) {
+        console.error('Failed to send payment confirmation notifications:', notifError);
+      }
 
     } else if (paymentStatus === 'FAILED' || paymentStatus === 'CANCELLED') {
       // Payment failed

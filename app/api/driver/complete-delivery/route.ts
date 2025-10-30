@@ -111,7 +111,13 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // TODO: Send SMS notification to customer about delivery completion
+    // Send delivery completed notifications (async, don't wait)
+    try {
+      const { notifyOrderDelivered } = await import('@/lib/notifications');
+      notifyOrderDelivered(updatedOrder).catch(console.error);
+    } catch (notifError) {
+      console.error('Failed to send delivery completion notifications:', notifError);
+    }
 
     return NextResponse.json({
       success: true,

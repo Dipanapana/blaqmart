@@ -198,6 +198,18 @@ export async function PATCH(
       },
     });
 
+    // Send notifications based on status change
+    if (status) {
+      try {
+        if (status === 'OUT_FOR_DELIVERY') {
+          const { notifyOrderOutForDelivery } = await import('@/lib/notifications');
+          notifyOrderOutForDelivery(updatedOrder).catch(console.error);
+        }
+      } catch (notifError) {
+        console.error('Failed to send status update notifications:', notifError);
+      }
+    }
+
     return NextResponse.json({
       success: true,
       order: updatedOrder,

@@ -157,6 +157,14 @@ export async function POST(request: NextRequest) {
     // For simplicity, return the first order (in production, handle multiple orders)
     const mainOrder = orders[0];
 
+    // Send notifications (async, don't wait)
+    try {
+      const { notifyOrderCreated } = await import('@/lib/notifications');
+      notifyOrderCreated(mainOrder).catch(console.error);
+    } catch (notifError) {
+      console.error('Failed to send order notifications:', notifError);
+    }
+
     return NextResponse.json({
       success: true,
       order: mainOrder,
