@@ -1,6 +1,9 @@
 'use client';
 
 import Header from '@/components/Header';
+import ProductGrid from '@/components/products/ProductGrid';
+import { Package, Truck, Shield, Clock } from 'lucide-react';
+import Link from 'next/link';
 
 export default function HomePage() {
   return (
@@ -9,44 +12,78 @@ export default function HomePage() {
       <Header />
 
       {/* Hero */}
-      <section className="bg-gradient-to-r from-green-600 to-green-700 text-white py-16">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-          <h2 className="text-5xl font-bold mb-4">
-            Shop Local in Warrenton
-          </h2>
-          <p className="text-xl mb-8">
-            Fast delivery from your favorite vendors. Order now!
-          </p>
-          <div className="flex gap-4 justify-center">
-            <button className="px-8 py-3 bg-white text-green-600 font-semibold rounded-lg hover:bg-gray-100">
-              Browse Products
-            </button>
-            <button className="px-8 py-3 bg-green-800 text-white font-semibold rounded-lg hover:bg-green-900">
-              Become a Vendor
-            </button>
+      <section className="bg-gradient-to-r from-green-600 to-green-700 text-white py-20">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="max-w-3xl mx-auto text-center">
+            <h1 className="text-5xl md:text-6xl font-bold mb-6">
+              Shop Local in Warrenton
+            </h1>
+            <p className="text-xl md:text-2xl mb-8 text-green-50">
+              Fast delivery from your favorite local vendors. Fresh groceries, household essentials, and more!
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <a
+                href="#products"
+                className="px-8 py-3 bg-white text-green-600 font-semibold rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                Browse Products
+              </a>
+              <Link
+                href="/vendor/signup"
+                className="px-8 py-3 bg-green-800 text-white font-semibold rounded-lg hover:bg-green-900 transition-colors border-2 border-green-400"
+              >
+                Become a Vendor
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section className="bg-white py-12 border-b">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div className="text-center">
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Truck className="w-6 h-6 text-green-600" />
+              </div>
+              <h3 className="font-semibold mb-2">Fast Delivery</h3>
+              <p className="text-sm text-gray-600">Get your order in 45 minutes or less</p>
+            </div>
+            <div className="text-center">
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Package className="w-6 h-6 text-green-600" />
+              </div>
+              <h3 className="font-semibold mb-2">Local Products</h3>
+              <p className="text-sm text-gray-600">Support Warrenton businesses</p>
+            </div>
+            <div className="text-center">
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Shield className="w-6 h-6 text-green-600" />
+              </div>
+              <h3 className="font-semibold mb-2">Quality Guaranteed</h3>
+              <p className="text-sm text-gray-600">Fresh products, every time</p>
+            </div>
+            <div className="text-center">
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Clock className="w-6 h-6 text-green-600" />
+              </div>
+              <h3 className="font-semibold mb-2">Open Daily</h3>
+              <p className="text-sm text-gray-600">Order anytime, 7 days a week</p>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Products Section */}
-      <section className="max-w-7xl mx-auto px-4 py-12">
-        <h3 className="text-3xl font-bold mb-8">Featured Products</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {/* Placeholder for products */}
-          <div className="bg-white rounded-xl shadow-sm p-6 text-center">
-            <div className="h-32 bg-gray-200 rounded-lg mb-4 flex items-center justify-center">
-              <span className="text-gray-400">Product Image</span>
-            </div>
-            <h4 className="font-semibold text-lg mb-2">Product Name</h4>
-            <p className="text-gray-600 text-sm mb-3">Store Name</p>
-            <div className="flex justify-between items-center">
-              <span className="text-2xl font-bold text-green-600">R99.99</span>
-              <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                Add
-              </button>
-            </div>
-          </div>
+      <section id="products" className="max-w-7xl mx-auto px-4 py-12">
+        <div className="text-center mb-10">
+          <h2 className="text-3xl md:text-4xl font-bold mb-3">Browse Products</h2>
+          <p className="text-gray-600 text-lg">
+            Discover fresh groceries and essentials from local vendors
+          </p>
         </div>
+        <ProductGrid />
       </section>
 
       {/* Footer */}

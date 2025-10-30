@@ -20,9 +20,10 @@ model User {
   createdAt DateTime @default(now())
 
   // Relations
-  stores     Store[]  @relation("VendorStores")
-  orders     Order[]  @relation("CustomerOrders")
-  deliveries Order[]  @relation("DriverDeliveries")
+  stores        Store[]        @relation("VendorStores")
+  orders        Order[]        @relation("CustomerOrders")
+  deliveries    Order[]        @relation("DriverDeliveries")
+  driverProfile DriverProfile?
 }
 
 enum Role {
@@ -30,6 +31,31 @@ enum Role {
   VENDOR
   DRIVER
   ADMIN
+}
+
+model DriverProfile {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  name          String
+  idNumber      String   @unique
+  licenseNumber String
+  vehicleType   VehicleType
+  vehicleReg    String
+  bankName      String
+  accountNumber String
+  branchCode    String
+  isApproved    Boolean  @default(false)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+}
+
+enum VehicleType {
+  MOTORCYCLE
+  CAR
+  BAKKIE
 }
 
 // ==================== STORE & SUBSCRIPTIONS ====================
