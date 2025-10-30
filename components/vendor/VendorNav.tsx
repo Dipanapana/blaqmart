@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Store, Package, BarChart3, Settings, Home, ShoppingBag } from 'lucide-react';
+import { Store, Package, BarChart3, Settings, Home, ShoppingBag, TrendingUp } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 
 export default function VendorNav() {
@@ -11,6 +11,7 @@ export default function VendorNav() {
 
   const navItems = [
     { href: '/vendor/dashboard', label: 'Dashboard', icon: BarChart3 },
+    { href: '/vendor/analytics', label: 'Analytics', icon: TrendingUp },
     { href: '/vendor/store', label: 'My Store', icon: Store },
     { href: '/vendor/products', label: 'Products', icon: Package },
     { href: '/vendor/orders', label: 'Orders', icon: ShoppingBag },
