@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/Header';
+import LocationTracker from '@/components/driver/LocationTracker';
 import { useAuth } from '@/lib/auth-context';
 import { formatCurrency } from '@/lib/utils';
 import {
@@ -244,6 +245,14 @@ export default function DeliverOrderPage() {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Location Tracking */}
+          <div className="mb-6">
+            <LocationTracker
+              orderId={order.id}
+              isActive={order.status === 'OUT_FOR_DELIVERY'}
+            />
           </div>
 
           {/* Photo Upload */}

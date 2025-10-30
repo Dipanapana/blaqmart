@@ -156,6 +156,9 @@ model Order {
   // Fulfillment
   driverId       String?
   estimatedTime  Int?          // minutes
+  driverLat      Float?        // Current driver latitude
+  driverLng      Float?        // Current driver longitude
+  lastLocationUpdate DateTime?  // Last time driver location was updated
 
   // Timestamps
   createdAt      DateTime      @default(now())
@@ -168,6 +171,7 @@ model Order {
   driver         User?         @relation("DriverDeliveries", fields: [driverId], references: [id])
   items          OrderItem[]
   deliveryProof  DeliveryProof?
+  locationHistory DriverLocationHistory[]
 }
 
 enum OrderStatus {
@@ -210,6 +214,19 @@ model DeliveryProof {
 
   // Relations
   order Order @relation(fields: [orderId], references: [id])
+}
+
+model DriverLocationHistory {
+  id        String   @id @default(uuid())
+  orderId   String
+  latitude  Float
+  longitude Float
+  createdAt DateTime @default(now())
+
+  // Relations
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@index([orderId, createdAt])
 }
 
 // ==================== REVIEWS & RATINGS ====================
