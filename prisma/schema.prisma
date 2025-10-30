@@ -20,10 +20,14 @@ model User {
   createdAt DateTime @default(now())
 
   // Relations
-  stores        Store[]        @relation("VendorStores")
-  orders        Order[]        @relation("CustomerOrders")
-  deliveries    Order[]        @relation("DriverDeliveries")
-  driverProfile DriverProfile?
+  stores              Store[]          @relation("VendorStores")
+  orders              Order[]          @relation("CustomerOrders")
+  deliveries          Order[]          @relation("DriverDeliveries")
+  driverProfile       DriverProfile?
+  productReviews      ProductReview[]  @relation("CustomerProductReviews")
+  storeReviews        StoreReview[]    @relation("CustomerStoreReviews")
+  driverRatingsGiven  DriverRating[]   @relation("CustomerDriverRatings")
+  driverRatingsReceived DriverRating[] @relation("DriverRatings")
 }
 
 enum Role {
@@ -79,6 +83,7 @@ model Store {
   products      Product[]
   orders        Order[]
   subscriptions Subscription[]
+  reviews       StoreReview[]
 }
 
 enum SubscriptionTier {
@@ -117,8 +122,9 @@ model Product {
   createdAt   DateTime @default(now())
 
   // Relations
-  store      Store       @relation(fields: [storeId], references: [id])
+  store      Store           @relation(fields: [storeId], references: [id])
   orderItems OrderItem[]
+  reviews    ProductReview[]
 }
 
 // ==================== ORDERS ====================
@@ -204,4 +210,60 @@ model DeliveryProof {
 
   // Relations
   order Order @relation(fields: [orderId], references: [id])
+}
+
+// ==================== REVIEWS & RATINGS ====================
+
+model ProductReview {
+  id          String   @id @default(uuid())
+  productId   String
+  customerId  String
+  orderId     String
+  rating      Int      // 1-5 stars
+  comment     String?
+  isApproved  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  // Relations
+  product  Product @relation(fields: [productId], references: [id])
+  customer User    @relation("CustomerProductReviews", fields: [customerId], references: [id])
+
+  @@unique([orderId, productId]) // One review per product per order
+  @@index([productId])
+  @@index([customerId])
+}
+
+model StoreReview {
+  id         String   @id @default(uuid())
+  storeId    String
+  customerId String
+  orderId    String   @unique // One review per order
+  rating     Int      // 1-5 stars
+  comment    String?
+  isApproved Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  // Relations
+  store    Store @relation(fields: [storeId], references: [id])
+  customer User  @relation("CustomerStoreReviews", fields: [customerId], references: [id])
+
+  @@index([storeId])
+  @@index([customerId])
+}
+
+model DriverRating {
+  id         String   @id @default(uuid())
+  driverId   String
+  customerId String
+  orderId    String   @unique // One rating per delivery
+  rating     Int      // 1-5 stars
+  comment    String?
+  createdAt  DateTime @default(now())
+
+  // Relations
+  driver   User @relation("DriverRatings", fields: [driverId], references: [id])
+  customer User @relation("CustomerDriverRatings", fields: [customerId], references: [id])
+
+  @@index([driverId])
+  @@index([customerId])
 }

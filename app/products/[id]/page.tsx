@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import Header from '@/components/Header';
+import ProductReviews from '@/components/reviews/ProductReviews';
 import { ArrowLeft, Store, ShoppingCart, Loader2, MapPin, Phone } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { useCartStore } from '@/lib/store/cart-store';
@@ -233,6 +234,11 @@ export default function ProductDetailsPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Reviews Section */}
+        <div className="mt-12 max-w-4xl mx-auto">
+          <ProductReviews productId={product.id} />
         </div>
       </div>
     </main>

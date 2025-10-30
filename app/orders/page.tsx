@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Header from '@/components/Header';
 import { useAuth } from '@/lib/auth-context';
 import { formatCurrency } from '@/lib/utils';
-import { Package, ChevronRight, Loader2 } from 'lucide-react';
+import { Package, ChevronRight, Loader2, Star } from 'lucide-react';
 
 interface Order {
   id: string;
@@ -110,63 +110,77 @@ export default function OrdersPage() {
           /* Orders list */
           <div className="space-y-4">
             {orders.map((order) => (
-              <Link
+              <div
                 key={order.id}
-                href={`/orders/${order.id}`}
-                className="block bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow"
+                className="bg-white rounded-xl shadow-sm p-6 border border-gray-100"
               >
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <h3 className="font-bold text-lg mb-1">
-                      Order {order.orderNumber}
-                    </h3>
+                <Link href={`/orders/${order.id}`} className="block">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <h3 className="font-bold text-lg mb-1">
+                        Order {order.orderNumber}
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        {new Date(order.createdAt).toLocaleDateString('en-ZA', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        })}
+                      </p>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-gray-400" />
+                  </div>
+
+                  <div className="flex justify-between items-center mb-3">
+                    <div>
+                      <p className="text-sm text-gray-600">Store</p>
+                      <p className="font-medium">{order.store.name}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-gray-600">Total</p>
+                      <p className="font-bold text-green-600">
+                        {formatCurrency(order.total)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center">
                     <p className="text-sm text-gray-600">
-                      {new Date(order.createdAt).toLocaleDateString('en-ZA', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                      })}
+                      {order.items.reduce((sum, item) => sum + item.quantity, 0)} item
+                      {order.items.reduce((sum, item) => sum + item.quantity, 0) !== 1
+                        ? 's'
+                        : ''}
                     </p>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-gray-400" />
-                </div>
-
-                <div className="flex justify-between items-center mb-3">
-                  <div>
-                    <p className="text-sm text-gray-600">Store</p>
-                    <p className="font-medium">{order.store.name}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-gray-600">Total</p>
-                    <p className="font-bold text-green-600">
-                      {formatCurrency(order.total)}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex justify-between items-center">
-                  <p className="text-sm text-gray-600">
-                    {order.items.reduce((sum, item) => sum + item.quantity, 0)} item
-                    {order.items.reduce((sum, item) => sum + item.quantity, 0) !== 1
-                      ? 's'
-                      : ''}
-                  </p>
-                  <div className="flex gap-2">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(
-                        order.status
-                      )}`}
-                    >
-                      {order.status.replace(/_/g, ' ')}
-                    </span>
-                    {order.paymentStatus === 'PAID' && (
-                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
-                        Paid
+                    <div className="flex gap-2">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(
+                          order.status
+                        )}`}
+                      >
+                        {order.status.replace(/_/g, ' ')}
                       </span>
-                    )}
+                      {order.paymentStatus === 'PAID' && (
+                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+                          Paid
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </Link>
+                </Link>
+
+                {/* Leave Review Button for Delivered Orders */}
+                {order.status === 'DELIVERED' && (
+                  <div className="mt-4 pt-4 border-t">
+                    <Link
+                      href={`/orders/${order.id}/review`}
+                      className="flex items-center justify-center gap-2 w-full py-2 bg-yellow-50 text-yellow-700 border border-yellow-200 rounded-lg hover:bg-yellow-100 font-medium transition-colors"
+                    >
+                      <Star className="w-4 h-4" />
+                      Leave a Review
+                    </Link>
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         )}
