@@ -20,14 +20,17 @@ model User {
   createdAt DateTime @default(now())
 
   // Relations
-  stores              Store[]          @relation("VendorStores")
-  orders              Order[]          @relation("CustomerOrders")
-  deliveries          Order[]          @relation("DriverDeliveries")
+  stores              Store[]                @relation("VendorStores")
+  orders              Order[]                @relation("CustomerOrders")
+  deliveries          Order[]                @relation("DriverDeliveries")
   driverProfile       DriverProfile?
-  productReviews      ProductReview[]  @relation("CustomerProductReviews")
-  storeReviews        StoreReview[]    @relation("CustomerStoreReviews")
-  driverRatingsGiven  DriverRating[]   @relation("CustomerDriverRatings")
-  driverRatingsReceived DriverRating[] @relation("DriverRatings")
+  productReviews      ProductReview[]        @relation("CustomerProductReviews")
+  storeReviews        StoreReview[]          @relation("CustomerStoreReviews")
+  driverRatingsGiven  DriverRating[]         @relation("CustomerDriverRatings")
+  driverRatingsReceived DriverRating[]       @relation("DriverRatings")
+  conversations       SupportConversation[]  @relation("CustomerConversations")
+  assignedConversations SupportConversation[] @relation("AssignedConversations")
+  messages            SupportMessage[]       @relation("SentMessages")
 }
 
 enum Role {
@@ -283,4 +286,58 @@ model DriverRating {
 
   @@index([driverId])
   @@index([customerId])
+}
+
+// ==================== CUSTOMER SUPPORT ====================
+
+model SupportConversation {
+  id          String              @id @default(uuid())
+  userId      String
+  subject     String
+  status      ConversationStatus  @default(OPEN)
+  priority    ConversationPriority @default(MEDIUM)
+  assignedTo  String?             // Admin user ID
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  closedAt    DateTime?
+
+  // Relations
+  user     User            @relation("CustomerConversations", fields: [userId], references: [id])
+  assignee User?           @relation("AssignedConversations", fields: [assignedTo], references: [id])
+  messages SupportMessage[]
+
+  @@index([userId])
+  @@index([assignedTo])
+  @@index([status])
+}
+
+model SupportMessage {
+  id             String               @id @default(uuid())
+  conversationId String
+  senderId       String
+  message        String               @db.Text
+  isFromCustomer Boolean              @default(true)
+  isRead         Boolean              @default(false)
+  createdAt      DateTime             @default(now())
+
+  // Relations
+  conversation SupportConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User                @relation("SentMessages", fields: [senderId], references: [id])
+
+  @@index([conversationId, createdAt])
+  @@index([senderId])
+}
+
+enum ConversationStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum ConversationPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
 }

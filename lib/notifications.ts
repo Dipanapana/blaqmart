@@ -1,7 +1,8 @@
 // Centralized Notification Service
-// Handles SMS and Email notifications for order updates
+// Handles SMS, WhatsApp, and Email notifications for order updates
 
 import { sendSMS } from './twilio';
+import { sendWhatsApp, formatWhatsAppCurrency } from './whatsapp';
 import { formatCurrency } from './utils';
 
 // ==================== SMS TEMPLATES ====================
@@ -146,6 +147,160 @@ export async function notifyVendorOrderReady(
   const message = `Order ${orderNumber} is marked as READY. Waiting for driver assignment.`;
 
   return await sendSMS({ to: phone, message });
+}
+
+// ==================== WHATSAPP NOTIFICATION FUNCTIONS ====================
+
+/**
+ * Send order confirmation WhatsApp to customer
+ */
+export async function notifyCustomerOrderCreatedWhatsApp(
+  phone: string,
+  data: OrderCreatedSMSData
+): Promise<boolean> {
+  const message = `🛒 *BLAQMART Order Placed*\n\nHi ${data.customerName}! 👋\n\nYour order *${data.orderNumber}* has been placed.\n\n📦 From: ${data.storeName}\n💰 Total: ${formatWhatsAppCurrency(data.total)}\n\n✅ We'll notify you when it's confirmed!`;
+
+  return await sendWhatsApp({ to: phone, message });
+}
+
+/**
+ * Send new order WhatsApp to vendor
+ */
+export async function notifyVendorNewOrderWhatsApp(
+  phone: string,
+  data: OrderCreatedSMSData
+): Promise<boolean> {
+  const message = `🔔 *New Order Received!*\n\nOrder: *${data.orderNumber}*\n👤 Customer: ${data.customerName}\n💰 Total: ${formatWhatsAppCurrency(data.total)}\n\n⏱️ Please confirm and prepare the order ASAP!`;
+
+  return await sendWhatsApp({ to: phone, message });
+}
+
+/**
+ * Send order confirmed WhatsApp to customer
+ */
+export async function notifyCustomerOrderConfirmedWhatsApp(
+  phone: string,
+  data: OrderConfirmedSMSData
+): Promise<boolean> {
+  const message = `✅ *Order Confirmed!*\n\nGreat news ${data.customerName}! 🎉\n\nYour order *${data.orderNumber}* has been confirmed by ${data.storeName}.\n\n⏱️ Estimated delivery: ${data.estimatedTime} minutes\n\n📍 Track your order in real-time on the app!`;
+
+  return await sendWhatsApp({ to: phone, message });
+}
+
+/**
+ * Send driver assigned WhatsApp to customer
+ */
+export async function notifyCustomerDriverAssignedWhatsApp(
+  phone: string,
+  data: DriverAssignedSMSData
+): Promise<boolean> {
+  const message = `🚗 *Driver Assigned!*\n\nYour order *${data.orderNumber}* is on the way!\n\n👤 Driver: ${data.driverName}\n📱 Phone: ${data.driverPhone}\n⏱️ ETA: ${data.estimatedTime} minutes\n\n📍 Track live location in the app!`;
+
+  return await sendWhatsApp({ to: phone, message });
+}
+
+/**
+ * Send out for delivery WhatsApp to customer
+ */
+export async function notifyCustomerOutForDeliveryWhatsApp(
+  phone: string,
+  orderNumber: string
+): Promise<boolean> {
+  const message = `🚚 *Out for Delivery!*\n\nYour BLAQMART order *${orderNumber}* is out for delivery! 📦\n\nYour driver is on the way. Please be available to receive your order.\n\n📍 Track your driver's location in real-time!`;
+
+  return await sendWhatsApp({ to: phone, message });
+}
+
+/**
+ * Send delivery completed WhatsApp to customer
+ */
+export async function notifyCustomerOrderDeliveredWhatsApp(
+  phone: string,
+  data: OrderDeliveredSMSData
+): Promise<boolean> {
+  const message = `✅ *Delivered Successfully!*\n\nHi ${data.customerName}! 🎉\n\nYour order *${data.orderNumber}* has been delivered.\n\nThank you for using BLAQMART! ❤️\n\n⭐ Please rate your experience in the app!`;
+
+  return await sendWhatsApp({ to: phone, message });
+}
+
+/**
+ * Send new delivery WhatsApp to driver
+ */
+export async function notifyDriverNewDeliveryWhatsApp(
+  phone: string,
+  orderNumber: string,
+  storeName: string,
+  deliveryAddress: string
+): Promise<boolean> {
+  const message = `🚗 *New Delivery Assigned!*\n\nOrder: *${orderNumber}*\n🏪 Pickup: ${storeName}\n📍 Deliver to: ${deliveryAddress}\n\n✅ Check your dashboard for details!`;
+
+  return await sendWhatsApp({ to: phone, message });
+}
+
+/**
+ * Send driver approval WhatsApp
+ */
+export async function notifyDriverApprovedWhatsApp(
+  phone: string,
+  data: DriverApprovedSMSData
+): Promise<boolean> {
+  const message = `🎉 *Application Approved!*\n\nCongratulations ${data.driverName}! 👏\n\nYour BLAQMART driver application has been approved! ✅\n\nYou can now start accepting deliveries. Log in to your dashboard to get started! 🚗💨`;
+
+  return await sendWhatsApp({ to: phone, message });
+}
+
+/**
+ * Send combined SMS + WhatsApp notification
+ */
+export async function notifyCustomerOrderCreatedMulti(
+  phone: string,
+  data: OrderCreatedSMSData
+): Promise<void> {
+  // Send both SMS and WhatsApp in parallel
+  await Promise.all([
+    notifyCustomerOrderCreated(phone, data).catch(console.error),
+    notifyCustomerOrderCreatedWhatsApp(phone, data).catch(console.error),
+  ]);
+}
+
+export async function notifyCustomerOrderConfirmedMulti(
+  phone: string,
+  data: OrderConfirmedSMSData
+): Promise<void> {
+  await Promise.all([
+    notifyCustomerOrderConfirmed(phone, data).catch(console.error),
+    notifyCustomerOrderConfirmedWhatsApp(phone, data).catch(console.error),
+  ]);
+}
+
+export async function notifyCustomerDriverAssignedMulti(
+  phone: string,
+  data: DriverAssignedSMSData
+): Promise<void> {
+  await Promise.all([
+    notifyCustomerDriverAssigned(phone, data).catch(console.error),
+    notifyCustomerDriverAssignedWhatsApp(phone, data).catch(console.error),
+  ]);
+}
+
+export async function notifyCustomerOutForDeliveryMulti(
+  phone: string,
+  orderNumber: string
+): Promise<void> {
+  await Promise.all([
+    notifyCustomerOutForDelivery(phone, orderNumber).catch(console.error),
+    notifyCustomerOutForDeliveryWhatsApp(phone, orderNumber).catch(console.error),
+  ]);
+}
+
+export async function notifyCustomerOrderDeliveredMulti(
+  phone: string,
+  data: OrderDeliveredSMSData
+): Promise<void> {
+  await Promise.all([
+    notifyCustomerOrderDelivered(phone, data).catch(console.error),
+    notifyCustomerOrderDeliveredWhatsApp(phone, data).catch(console.error),
+  ]);
 }
 
 // ==================== EMAIL TEMPLATES ====================
