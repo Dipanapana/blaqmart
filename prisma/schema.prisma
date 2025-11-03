@@ -31,6 +31,7 @@ model User {
   conversations       SupportConversation[]  @relation("CustomerConversations")
   assignedConversations SupportConversation[] @relation("AssignedConversations")
   messages            SupportMessage[]       @relation("SentMessages")
+  loyaltyAccount      LoyaltyAccount?
 }
 
 enum Role {
@@ -340,4 +341,97 @@ enum ConversationPriority {
   MEDIUM
   HIGH
   URGENT
+}
+
+// ==================== LOYALTY & REWARDS ====================
+
+model LoyaltyAccount {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  points        Int      @default(0)
+  totalEarned   Int      @default(0)
+  totalRedeemed Int      @default(0)
+  tier          LoyaltyTier @default(BRONZE)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  user         User                @relation(fields: [userId], references: [id])
+  transactions LoyaltyTransaction[]
+  redemptions  RewardRedemption[]
+
+  @@index([userId])
+}
+
+model LoyaltyTransaction {
+  id          String   @id @default(uuid())
+  accountId   String
+  orderId     String?
+  points      Int      // Positive for earn, negative for spend
+  type        TransactionType
+  description String
+  createdAt   DateTime @default(now())
+
+  // Relations
+  account LoyaltyAccount @relation(fields: [accountId], references: [id])
+
+  @@index([accountId, createdAt])
+  @@index([orderId])
+}
+
+model Reward {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  pointsCost  Int
+  rewardType  RewardType
+  rewardValue Float    // Discount amount or percentage
+  isActive    Boolean  @default(true)
+  expiryDays  Int      @default(30) // Days until redemption expires
+  createdAt   DateTime @default(now())
+
+  // Relations
+  redemptions RewardRedemption[]
+}
+
+model RewardRedemption {
+  id          String   @id @default(uuid())
+  accountId   String
+  rewardId    String
+  code        String   @unique // Redemption code
+  isUsed      Boolean  @default(false)
+  usedAt      DateTime?
+  orderId     String?  // Order where it was used
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+
+  // Relations
+  account LoyaltyAccount @relation(fields: [accountId], references: [id])
+  reward  Reward         @relation(fields: [rewardId], references: [id])
+
+  @@index([accountId])
+  @@index([code])
+  @@index([expiresAt])
+}
+
+enum LoyaltyTier {
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
+}
+
+enum TransactionType {
+  EARN_ORDER
+  EARN_REFERRAL
+  EARN_REVIEW
+  EARN_BONUS
+  REDEEM_REWARD
+  ADMIN_ADJUSTMENT
+}
+
+enum RewardType {
+  DISCOUNT_AMOUNT
+  DISCOUNT_PERCENT
+  FREE_DELIVERY
 }
