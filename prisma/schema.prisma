@@ -32,6 +32,7 @@ model User {
   assignedConversations SupportConversation[] @relation("AssignedConversations")
   messages            SupportMessage[]       @relation("SentMessages")
   loyaltyAccount      LoyaltyAccount?
+  vendorPayouts       VendorPayout[]         @relation("VendorPayouts")
 }
 
 enum Role {
@@ -88,6 +89,11 @@ model Store {
   orders        Order[]
   subscriptions Subscription[]
   reviews       StoreReview[]
+
+  @@index([vendorId])
+  @@index([isActive])
+  @@index([subscriptionTier])
+  @@index([createdAt])
 }
 
 enum SubscriptionTier {
@@ -129,6 +135,11 @@ model Product {
   store      Store           @relation(fields: [storeId], references: [id])
   orderItems OrderItem[]
   reviews    ProductReview[]
+
+  @@index([storeId])
+  @@index([isActive])
+  @@index([createdAt])
+  @@index([storeId, isActive])
 }
 
 // ==================== ORDERS ====================
@@ -176,6 +187,16 @@ model Order {
   items          OrderItem[]
   deliveryProof  DeliveryProof?
   locationHistory DriverLocationHistory[]
+
+  @@index([customerId])
+  @@index([storeId])
+  @@index([driverId])
+  @@index([status])
+  @@index([paymentStatus])
+  @@index([createdAt])
+  @@index([customerId, status])
+  @@index([storeId, status])
+  @@index([driverId, status])
 }
 
 enum OrderStatus {
@@ -434,4 +455,40 @@ enum RewardType {
   DISCOUNT_AMOUNT
   DISCOUNT_PERCENT
   FREE_DELIVERY
+}
+
+// ==================== VENDOR PAYOUTS ====================
+
+model VendorPayout {
+  id              String        @id @default(uuid())
+  vendorId        String
+  amount          Float
+  status          PayoutStatus  @default(PENDING)
+  periodStart     DateTime
+  periodEnd       DateTime
+  orderCount      Int
+  totalSales      Float
+  platformFee     Float         // Platform commission
+  netAmount       Float         // Amount after fees
+  paymentMethod   String?
+  paymentReference String?
+  paidAt          DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  vendor User @relation("VendorPayouts", fields: [vendorId], references: [id])
+
+  @@index([vendorId])
+  @@index([status])
+  @@index([periodStart, periodEnd])
+  @@index([createdAt])
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  PAID
+  FAILED
+  CANCELLED
 }
