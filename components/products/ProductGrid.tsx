@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import ProductCard from './ProductCard';
-import { Loader2, Search } from 'lucide-react';
+import { Loader2, Search, SlidersHorizontal } from 'lucide-react';
 import { useCartStore } from '@/lib/store/cart-store';
 
 interface Product {
@@ -29,6 +29,10 @@ export default function ProductGrid({ initialProducts = [] }: ProductGridProps) 
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+  const [sortBy, setSortBy] = useState('newest');
+  const [showFilters, setShowFilters] = useState(false);
   const addItem = useCartStore((state) => state.addItem);
 
   // Debounce search
@@ -40,7 +44,7 @@ export default function ProductGrid({ initialProducts = [] }: ProductGridProps) 
     return () => clearTimeout(timer);
   }, [search]);
 
-  // Fetch products when search changes
+  // Fetch products when filters change
   useEffect(() => {
     async function fetchProducts() {
       setLoading(true);
@@ -48,6 +52,15 @@ export default function ProductGrid({ initialProducts = [] }: ProductGridProps) 
         const params = new URLSearchParams();
         if (debouncedSearch) {
           params.append('search', debouncedSearch);
+        }
+        if (minPrice) {
+          params.append('minPrice', minPrice);
+        }
+        if (maxPrice) {
+          params.append('maxPrice', maxPrice);
+        }
+        if (sortBy) {
+          params.append('sortBy', sortBy);
         }
 
         const res = await fetch(`/api/products?${params}`);
@@ -61,7 +74,7 @@ export default function ProductGrid({ initialProducts = [] }: ProductGridProps) 
     }
 
     fetchProducts();
-  }, [debouncedSearch]);
+  }, [debouncedSearch, minPrice, maxPrice, sortBy]);
 
   const handleAddToCart = (product: Product) => {
     addItem({
@@ -89,6 +102,85 @@ export default function ProductGrid({ initialProducts = [] }: ProductGridProps) 
           className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
         />
       </div>
+
+      {/* Filter Bar */}
+      <div className="flex items-center justify-between gap-4">
+        <button
+          onClick={() => setShowFilters(!showFilters)}
+          className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+        >
+          <SlidersHorizontal className="w-5 h-5" />
+          <span className="font-medium">Filters</span>
+        </button>
+
+        <div className="flex items-center gap-2">
+          <label className="text-sm text-gray-600 font-medium">Sort by:</label>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+          >
+            <option value="newest">Newest</option>
+            <option value="price-asc">Price: Low to High</option>
+            <option value="price-desc">Price: High to Low</option>
+            <option value="name-asc">Name: A to Z</option>
+            <option value="name-desc">Name: Z to A</option>
+            <option value="popular">Most Popular</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Filter Panel */}
+      {showFilters && (
+        <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Price Range */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Minimum Price
+              </label>
+              <input
+                type="number"
+                value={minPrice}
+                onChange={(e) => setMinPrice(e.target.value)}
+                placeholder="R 0"
+                min="0"
+                step="10"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Maximum Price
+              </label>
+              <input
+                type="number"
+                value={maxPrice}
+                onChange={(e) => setMaxPrice(e.target.value)}
+                placeholder="R 10,000"
+                min="0"
+                step="10"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              />
+            </div>
+
+            {/* Clear Filters */}
+            <div className="flex items-end">
+              <button
+                onClick={() => {
+                  setMinPrice('');
+                  setMaxPrice('');
+                  setSortBy('newest');
+                }}
+                className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+              >
+                Clear Filters
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Loading State */}
       {loading && (

@@ -20,10 +20,19 @@ model User {
   createdAt DateTime @default(now())
 
   // Relations
-  stores        Store[]        @relation("VendorStores")
-  orders        Order[]        @relation("CustomerOrders")
-  deliveries    Order[]        @relation("DriverDeliveries")
-  driverProfile DriverProfile?
+  stores              Store[]                @relation("VendorStores")
+  orders              Order[]                @relation("CustomerOrders")
+  deliveries          Order[]                @relation("DriverDeliveries")
+  driverProfile       DriverProfile?
+  productReviews      ProductReview[]        @relation("CustomerProductReviews")
+  storeReviews        StoreReview[]          @relation("CustomerStoreReviews")
+  driverRatingsGiven  DriverRating[]         @relation("CustomerDriverRatings")
+  driverRatingsReceived DriverRating[]       @relation("DriverRatings")
+  conversations       SupportConversation[]  @relation("CustomerConversations")
+  assignedConversations SupportConversation[] @relation("AssignedConversations")
+  messages            SupportMessage[]       @relation("SentMessages")
+  loyaltyAccount      LoyaltyAccount?
+  vendorPayouts       VendorPayout[]         @relation("VendorPayouts")
 }
 
 enum Role {
@@ -79,6 +88,12 @@ model Store {
   products      Product[]
   orders        Order[]
   subscriptions Subscription[]
+  reviews       StoreReview[]
+
+  @@index([vendorId])
+  @@index([isActive])
+  @@index([subscriptionTier])
+  @@index([createdAt])
 }
 
 enum SubscriptionTier {
@@ -117,8 +132,14 @@ model Product {
   createdAt   DateTime @default(now())
 
   // Relations
-  store      Store       @relation(fields: [storeId], references: [id])
+  store      Store           @relation(fields: [storeId], references: [id])
   orderItems OrderItem[]
+  reviews    ProductReview[]
+
+  @@index([storeId])
+  @@index([isActive])
+  @@index([createdAt])
+  @@index([storeId, isActive])
 }
 
 // ==================== ORDERS ====================
@@ -150,6 +171,9 @@ model Order {
   // Fulfillment
   driverId       String?
   estimatedTime  Int?          // minutes
+  driverLat      Float?        // Current driver latitude
+  driverLng      Float?        // Current driver longitude
+  lastLocationUpdate DateTime?  // Last time driver location was updated
 
   // Timestamps
   createdAt      DateTime      @default(now())
@@ -162,6 +186,17 @@ model Order {
   driver         User?         @relation("DriverDeliveries", fields: [driverId], references: [id])
   items          OrderItem[]
   deliveryProof  DeliveryProof?
+  locationHistory DriverLocationHistory[]
+
+  @@index([customerId])
+  @@index([storeId])
+  @@index([driverId])
+  @@index([status])
+  @@index([paymentStatus])
+  @@index([createdAt])
+  @@index([customerId, status])
+  @@index([storeId, status])
+  @@index([driverId, status])
 }
 
 enum OrderStatus {
@@ -204,4 +239,256 @@ model DeliveryProof {
 
   // Relations
   order Order @relation(fields: [orderId], references: [id])
+}
+
+model DriverLocationHistory {
+  id        String   @id @default(uuid())
+  orderId   String
+  latitude  Float
+  longitude Float
+  createdAt DateTime @default(now())
+
+  // Relations
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@index([orderId, createdAt])
+}
+
+// ==================== REVIEWS & RATINGS ====================
+
+model ProductReview {
+  id          String   @id @default(uuid())
+  productId   String
+  customerId  String
+  orderId     String
+  rating      Int      // 1-5 stars
+  comment     String?
+  isApproved  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  // Relations
+  product  Product @relation(fields: [productId], references: [id])
+  customer User    @relation("CustomerProductReviews", fields: [customerId], references: [id])
+
+  @@unique([orderId, productId]) // One review per product per order
+  @@index([productId])
+  @@index([customerId])
+}
+
+model StoreReview {
+  id         String   @id @default(uuid())
+  storeId    String
+  customerId String
+  orderId    String   @unique // One review per order
+  rating     Int      // 1-5 stars
+  comment    String?
+  isApproved Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  // Relations
+  store    Store @relation(fields: [storeId], references: [id])
+  customer User  @relation("CustomerStoreReviews", fields: [customerId], references: [id])
+
+  @@index([storeId])
+  @@index([customerId])
+}
+
+model DriverRating {
+  id         String   @id @default(uuid())
+  driverId   String
+  customerId String
+  orderId    String   @unique // One rating per delivery
+  rating     Int      // 1-5 stars
+  comment    String?
+  createdAt  DateTime @default(now())
+
+  // Relations
+  driver   User @relation("DriverRatings", fields: [driverId], references: [id])
+  customer User @relation("CustomerDriverRatings", fields: [customerId], references: [id])
+
+  @@index([driverId])
+  @@index([customerId])
+}
+
+// ==================== CUSTOMER SUPPORT ====================
+
+model SupportConversation {
+  id          String              @id @default(uuid())
+  userId      String
+  subject     String
+  status      ConversationStatus  @default(OPEN)
+  priority    ConversationPriority @default(MEDIUM)
+  assignedTo  String?             // Admin user ID
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  closedAt    DateTime?
+
+  // Relations
+  user     User            @relation("CustomerConversations", fields: [userId], references: [id])
+  assignee User?           @relation("AssignedConversations", fields: [assignedTo], references: [id])
+  messages SupportMessage[]
+
+  @@index([userId])
+  @@index([assignedTo])
+  @@index([status])
+}
+
+model SupportMessage {
+  id             String               @id @default(uuid())
+  conversationId String
+  senderId       String
+  message        String               @db.Text
+  isFromCustomer Boolean              @default(true)
+  isRead         Boolean              @default(false)
+  createdAt      DateTime             @default(now())
+
+  // Relations
+  conversation SupportConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User                @relation("SentMessages", fields: [senderId], references: [id])
+
+  @@index([conversationId, createdAt])
+  @@index([senderId])
+}
+
+enum ConversationStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum ConversationPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+// ==================== LOYALTY & REWARDS ====================
+
+model LoyaltyAccount {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  points        Int      @default(0)
+  totalEarned   Int      @default(0)
+  totalRedeemed Int      @default(0)
+  tier          LoyaltyTier @default(BRONZE)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  user         User                @relation(fields: [userId], references: [id])
+  transactions LoyaltyTransaction[]
+  redemptions  RewardRedemption[]
+
+  @@index([userId])
+}
+
+model LoyaltyTransaction {
+  id          String   @id @default(uuid())
+  accountId   String
+  orderId     String?
+  points      Int      // Positive for earn, negative for spend
+  type        TransactionType
+  description String
+  createdAt   DateTime @default(now())
+
+  // Relations
+  account LoyaltyAccount @relation(fields: [accountId], references: [id])
+
+  @@index([accountId, createdAt])
+  @@index([orderId])
+}
+
+model Reward {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  pointsCost  Int
+  rewardType  RewardType
+  rewardValue Float    // Discount amount or percentage
+  isActive    Boolean  @default(true)
+  expiryDays  Int      @default(30) // Days until redemption expires
+  createdAt   DateTime @default(now())
+
+  // Relations
+  redemptions RewardRedemption[]
+}
+
+model RewardRedemption {
+  id          String   @id @default(uuid())
+  accountId   String
+  rewardId    String
+  code        String   @unique // Redemption code
+  isUsed      Boolean  @default(false)
+  usedAt      DateTime?
+  orderId     String?  // Order where it was used
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+
+  // Relations
+  account LoyaltyAccount @relation(fields: [accountId], references: [id])
+  reward  Reward         @relation(fields: [rewardId], references: [id])
+
+  @@index([accountId])
+  @@index([code])
+  @@index([expiresAt])
+}
+
+enum LoyaltyTier {
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
+}
+
+enum TransactionType {
+  EARN_ORDER
+  EARN_REFERRAL
+  EARN_REVIEW
+  EARN_BONUS
+  REDEEM_REWARD
+  ADMIN_ADJUSTMENT
+}
+
+enum RewardType {
+  DISCOUNT_AMOUNT
+  DISCOUNT_PERCENT
+  FREE_DELIVERY
+}
+
+// ==================== VENDOR PAYOUTS ====================
+
+model VendorPayout {
+  id              String        @id @default(uuid())
+  vendorId        String
+  amount          Float
+  status          PayoutStatus  @default(PENDING)
+  periodStart     DateTime
+  periodEnd       DateTime
+  orderCount      Int
+  totalSales      Float
+  platformFee     Float         // Platform commission
+  netAmount       Float         // Amount after fees
+  paymentMethod   String?
+  paymentReference String?
+  paidAt          DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  vendor User @relation("VendorPayouts", fields: [vendorId], references: [id])
+
+  @@index([vendorId])
+  @@index([status])
+  @@index([periodStart, periodEnd])
+  @@index([createdAt])
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  PAID
+  FAILED
+  CANCELLED
 }

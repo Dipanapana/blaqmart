@@ -60,6 +60,9 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const storeId = searchParams.get('storeId');
     const search = searchParams.get('search');
+    const minPrice = searchParams.get('minPrice');
+    const maxPrice = searchParams.get('maxPrice');
+    const sortBy = searchParams.get('sortBy') || 'newest';
     const limit = parseInt(searchParams.get('limit') || '20');
     const offset = parseInt(searchParams.get('offset') || '0');
 
@@ -79,6 +82,44 @@ export async function GET(request: Request) {
       ];
     }
 
+    // Price range filter
+    if (minPrice || maxPrice) {
+      where.price = {};
+      if (minPrice) where.price.gte = parseFloat(minPrice);
+      if (maxPrice) where.price.lte = parseFloat(maxPrice);
+    }
+
+    // Determine sort order
+    let orderBy: any = [
+      { store: { subscriptionTier: 'desc' } },
+      { createdAt: 'desc' },
+    ];
+
+    switch (sortBy) {
+      case 'price-asc':
+        orderBy = [{ price: 'asc' }];
+        break;
+      case 'price-desc':
+        orderBy = [{ price: 'desc' }];
+        break;
+      case 'name-asc':
+        orderBy = [{ name: 'asc' }];
+        break;
+      case 'name-desc':
+        orderBy = [{ name: 'desc' }];
+        break;
+      case 'popular':
+        // For now, sort by newest (can be enhanced with actual popularity metrics)
+        orderBy = [{ createdAt: 'desc' }];
+        break;
+      default:
+        // newest (default)
+        orderBy = [
+          { store: { subscriptionTier: 'desc' } },
+          { createdAt: 'desc' },
+        ];
+    }
+
     // Fetch products
     const [products, total] = await Promise.all([
       prisma.product.findMany({
@@ -92,11 +133,7 @@ export async function GET(request: Request) {
             },
           },
         },
-        orderBy: [
-          // Premium stores first
-          { store: { subscriptionTier: 'desc' } },
-          { createdAt: 'desc' },
-        ],
+        orderBy,
         take: limit,
         skip: offset,
       }),

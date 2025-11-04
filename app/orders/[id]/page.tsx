@@ -358,6 +358,22 @@ export default function OrderTrackingPage() {
           </div>
         </div>
 
+        {/* Live Tracking Button */}
+        {['CONFIRMED', 'PREPARING', 'READY', 'OUT_FOR_DELIVERY'].includes(order.status) && (
+          <Link
+            href={`/orders/${order.id}/track`}
+            className="mt-6 block w-full py-4 bg-gradient-to-r from-green-600 to-blue-600 text-white text-center rounded-lg font-semibold hover:from-green-700 hover:to-blue-700 shadow-lg flex items-center justify-center gap-2"
+          >
+            <MapPin className="w-5 h-5" />
+            Track Live Delivery
+            {order.status === 'OUT_FOR_DELIVERY' && (
+              <span className="px-2 py-1 bg-white bg-opacity-20 rounded text-xs">
+                LIVE
+              </span>
+            )}
+          </Link>
+        )}
+
         {/* Help */}
         <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
           <p className="text-sm text-blue-800">
