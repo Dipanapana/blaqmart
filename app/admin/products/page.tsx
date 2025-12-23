@@ -18,6 +18,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
+export const dynamic = 'force-dynamic'
+
 async function getProducts() {
   return db.product.findMany({
     include: { category: true },

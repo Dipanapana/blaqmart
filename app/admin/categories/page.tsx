@@ -18,6 +18,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { DeleteCategoryButton } from "./delete-category-button"
 
+export const dynamic = 'force-dynamic'
+
 async function getCategories() {
   return db.category.findMany({
     include: {

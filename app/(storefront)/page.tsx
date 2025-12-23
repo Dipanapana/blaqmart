@@ -1,6 +1,8 @@
 import { db } from "@/lib/db"
 import { AnimatedHomepage } from "@/components/storefront/animated-homepage"
 
+export const dynamic = 'force-dynamic'
+
 async function getHomePageData() {
   const [grades, categories, featuredProducts, stationeryPacks] = await Promise.all([
     db.grade.findMany({

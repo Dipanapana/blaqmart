@@ -3,6 +3,8 @@ import { ArrowLeft } from "lucide-react"
 import { db } from "@/lib/db"
 import { ProductForm } from "../product-form"
 
+export const dynamic = 'force-dynamic'
+
 async function getCategories() {
   return db.category.findMany({
     orderBy: { name: "asc" },

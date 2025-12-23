@@ -12,6 +12,8 @@ import { formatPrice } from "@/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
+export const dynamic = 'force-dynamic'
+
 async function getDashboardStats() {
   const today = new Date()
   today.setHours(0, 0, 0, 0)

@@ -3,6 +3,8 @@ import { ArrowLeft } from "lucide-react"
 import { db } from "@/lib/db"
 import { HamperForm } from "../hamper-form"
 
+export const dynamic = 'force-dynamic'
+
 async function getProducts() {
   return db.product.findMany({
     where: { isActive: true },

@@ -5,6 +5,8 @@ import { StoreSettingsForm } from "./store-settings-form"
 import { DeliveryZonesManager } from "./delivery-zones-manager"
 import { PaymentSettingsForm } from "./payment-settings-form"
 
+export const dynamic = 'force-dynamic'
+
 async function getSettings() {
   const settings = await db.storeSetting.findFirst()
   return settings

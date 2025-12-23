@@ -3,6 +3,8 @@ import Image from "next/image"
 import { db } from "@/lib/db"
 import { Card, CardContent } from "@/components/ui/card"
 
+export const dynamic = 'force-dynamic'
+
 async function getCategories() {
   return db.category.findMany({
     where: { isActive: true },

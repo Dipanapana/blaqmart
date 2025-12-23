@@ -12,6 +12,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
+export const dynamic = 'force-dynamic'
+
 async function getHamperPresets() {
   return db.hamperPreset.findMany({
     include: {
