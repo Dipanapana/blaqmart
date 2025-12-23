@@ -1,0 +1,575 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============== ENUMS ==============
+
+enum UserRole {
+  CUSTOMER
+  SUPPLIER
+  DRIVER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  READY
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum PaymentProvider {
+  PAYFAST
+  YOCO_CARD
+  YOCO_EFT
+  COD
+}
+
+enum DeliveryType {
+  LOCAL_OWN_VEHICLE // Warrenton, Jan Kempdorp - COD available
+  COURIER           // Hartswater, Christiana, others
+}
+
+// ============== USERS ==============
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  phone         String?
+  name          String?
+  passwordHash  String?
+  role          UserRole  @default(CUSTOMER)
+  image         String?
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  addresses Address[]
+  orders    Order[]
+  cart      Cart?
+
+  // Future: supplier and driver relations
+  supplier Supplier?
+}
+
+model Address {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label         String? // "Home", "Work", "Mom's house"
+  recipientName String
+  phone         String
+  streetAddress String
+  suburb        String
+  city          String
+  postalCode    String
+  province      String   @default("Northern Cape")
+  isDefault     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  orders Order[]
+
+  @@index([userId])
+}
+
+// ============== SUPPLIERS (Future-ready) ==============
+
+model Supplier {
+  id            String  @id @default(cuid())
+  userId        String  @unique
+  user          User    @relation(fields: [userId], references: [id])
+  shopName      String
+  slug          String  @unique
+  description   String?
+  logo          String?
+  contactEmail  String?
+  contactPhone  String?
+
+  // Location
+  streetAddress  String?
+  suburb         String
+  city           String   @default("Warrenton")
+  province       String   @default("Northern Cape")
+
+  // Operations
+  deliveryRadius Int     @default(20)
+  minOrderAmount Decimal @default(100)
+
+  // Status
+  isActive   Boolean @default(true)
+  isVerified Boolean @default(false)
+
+  // Financials (future)
+  commissionRate Decimal @default(0.10) // 10%
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  products        Product[]
+  hamperPresets   HamperPreset[]
+  stationeryPacks StationeryPack[]
+  orders          Order[]
+
+  @@index([suburb])
+  @@index([isActive])
+}
+
+// ============== GRADES (For School Stationery) ==============
+
+model Grade {
+  id          String  @id @default(cuid())
+  name        String  @unique // "Grade R", "Grade 1", etc.
+  slug        String  @unique // "grade-r", "grade-1"
+  description String?
+  image       String?
+  sortOrder   Int     @default(0)
+  isActive    Boolean @default(true)
+
+  stationeryPacks StationeryPack[]
+  products        ProductGrade[]
+}
+
+model ProductGrade {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  gradeId   String
+  grade     Grade   @relation(fields: [gradeId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, gradeId])
+  @@index([gradeId])
+}
+
+// ============== SCHOOLS (Partner Schools) ==============
+
+model School {
+  id           String  @id @default(cuid())
+  name         String
+  slug         String  @unique
+  town         String // Warrenton, Jan Kempdorp, etc.
+  contactEmail String?
+  contactPhone String?
+  logo         String?
+  isActive     Boolean @default(true)
+  isPartner    Boolean @default(false)
+
+  stationeryPacks StationeryPack[]
+
+  createdAt DateTime @default(now())
+
+  @@index([town])
+  @@index([isPartner])
+}
+
+// ============== PRODUCTS ==============
+
+model Category {
+  id          String  @id @default(cuid())
+  name        String  @unique
+  slug        String  @unique
+  description String?
+  image       String?
+  sortOrder   Int     @default(0)
+  isActive    Boolean @default(true)
+
+  products Product[]
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  supplierId  String
+  supplier    Supplier @relation(fields: [supplierId], references: [id])
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+
+  name        String
+  slug        String  @unique
+  description String?
+
+  price        Decimal
+  comparePrice Decimal? // "Was R199"
+  costPrice    Decimal? // For margin tracking
+
+  images String @default("[]") // JSON array of URLs
+
+  stock             Int     @default(0)
+  trackStock        Boolean @default(true)
+  lowStockThreshold Int     @default(5)
+
+  weight Decimal? // kg, for delivery calc
+
+  tags       String @default("[]") // JSON array
+  isActive   Boolean  @default(true)
+  isFeatured Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cartItems           CartItem[]
+  orderItems          OrderItem[]
+  hamperItems         HamperPresetItem[]
+  variants            ProductVariant[]
+  grades              ProductGrade[]
+  stationeryPackItems StationeryPackItem[]
+
+  @@index([supplierId])
+  @@index([categoryId])
+  @@index([isActive, isFeatured])
+  @@index([slug])
+}
+
+// ============== HAMPER PRESETS ==============
+
+model HamperPreset {
+  id          String   @id @default(cuid())
+  supplierId  String
+  supplier    Supplier @relation(fields: [supplierId], references: [id])
+
+  name        String
+  slug        String  @unique
+  description String?
+  image       String?
+
+  // Pricing
+  price Decimal // Override total if set
+
+  isActive   Boolean @default(true)
+  isFeatured Boolean @default(false)
+  sortOrder  Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items HamperPresetItem[]
+
+  @@index([supplierId])
+  @@index([isActive])
+}
+
+model HamperPresetItem {
+  id        String       @id @default(cuid())
+  presetId  String
+  preset    HamperPreset @relation(fields: [presetId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product      @relation(fields: [productId], references: [id])
+  quantity  Int          @default(1)
+
+  @@unique([presetId, productId])
+}
+
+// ============== STATIONERY PACKS (Grade-based bundles) ==============
+
+model StationeryPack {
+  id         String   @id @default(cuid())
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id])
+  gradeId    String?
+  grade      Grade?   @relation(fields: [gradeId], references: [id])
+  schoolId   String?
+  school     School?  @relation(fields: [schoolId], references: [id])
+
+  name        String // "Grade 4 Complete Pack"
+  slug        String  @unique
+  description String?
+  image       String?
+
+  // Pricing
+  price        Decimal
+  comparePrice Decimal? // Original if bought separately
+
+  isActive   Boolean @default(true)
+  isFeatured Boolean @default(false)
+  sortOrder  Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items StationeryPackItem[]
+
+  @@index([gradeId])
+  @@index([schoolId])
+  @@index([isActive])
+}
+
+model StationeryPackItem {
+  id        String         @id @default(cuid())
+  packId    String
+  pack      StationeryPack @relation(fields: [packId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product        @relation(fields: [productId], references: [id])
+  variantId String?
+  variant   ProductVariant? @relation(fields: [variantId], references: [id])
+  quantity  Int            @default(1)
+
+  @@unique([packId, productId, variantId])
+}
+
+// ============== PRODUCT VARIANTS (Colors, Sizes, Pack Quantities) ==============
+
+model ProductVariant {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  name  String   // "Blue", "A4", "Pack of 12"
+  sku   String?
+  price Decimal? // Override product price if set
+  stock Int      @default(0)
+
+  // Variant attributes
+  color    String?
+  size     String?
+  packSize Int? // For bundles: "Pack of 12"
+
+  images   String @default("[]") // JSON array
+  isActive Boolean @default(true)
+  sortOrder Int    @default(0)
+
+  createdAt DateTime @default(now())
+
+  cartItems         CartItem[]
+  orderItems        OrderItem[]
+  stationeryPackItems StationeryPackItem[]
+
+  @@index([productId])
+  @@unique([productId, sku])
+}
+
+// ============== CART ==============
+
+model Cart {
+  id        String  @id @default(cuid())
+  userId    String? @unique
+  user      User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionId String? @unique // For guest carts
+
+  giftMessage String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items CartItem[]
+
+  @@index([sessionId])
+}
+
+model CartItem {
+  id        String  @id @default(cuid())
+  cartId    String
+  cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  variantId String?
+  variant   ProductVariant? @relation(fields: [variantId], references: [id])
+  quantity  Int     @default(1)
+
+  @@unique([cartId, productId, variantId])
+  @@index([variantId])
+}
+
+// ============== ORDERS ==============
+
+model Order {
+  id          String @id @default(cuid())
+  orderNumber String @unique
+
+  // Customer
+  customerId String?
+  customer   User?   @relation(fields: [customerId], references: [id])
+  guestEmail String? // For guest checkout
+  guestPhone String?
+
+  // Supplier (for future multi-vendor)
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id])
+
+  // Delivery
+  addressId String?
+  address   Address? @relation(fields: [addressId], references: [id])
+
+  // Snapshot address (in case address is deleted/changed)
+  shippingName       String
+  shippingPhone      String
+  shippingAddress    String
+  shippingSuburb     String
+  shippingCity       String
+  shippingPostalCode String
+  shippingProvince   String
+
+  // Pricing
+  subtotal    Decimal
+  deliveryFee Decimal
+  discount    Decimal @default(0)
+  total       Decimal
+
+  // Status
+  status        OrderStatus   @default(PENDING)
+  paymentStatus PaymentStatus @default(PENDING)
+
+  // Details
+  giftMessage   String?
+  deliveryDate  DateTime?
+  deliverySlot  String? // "09:00-12:00"
+  deliveryNotes String?
+
+  // Tracking
+  trackingNumber String?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  confirmedAt DateTime?
+  deliveredAt DateTime?
+
+  items         OrderItem[]
+  payment       Payment?
+  statusHistory OrderStatusHistory[]
+
+  @@index([customerId])
+  @@index([supplierId])
+  @@index([status])
+  @@index([orderNumber])
+  @@index([createdAt])
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  variantId String?
+  variant   ProductVariant? @relation(fields: [variantId], references: [id])
+
+  // Snapshot (prices at time of order)
+  productName String
+  variantName String? // "Blue", "Pack of 12"
+  quantity    Int
+  unitPrice   Decimal
+  totalPrice  Decimal
+
+  @@index([orderId])
+  @@index([variantId])
+}
+
+model OrderStatusHistory {
+  id        String      @id @default(cuid())
+  orderId   String
+  order     Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status    OrderStatus
+  note      String?
+  createdAt DateTime    @default(now())
+  createdBy String? // Admin user ID
+
+  @@index([orderId])
+}
+
+// ============== PAYMENTS ==============
+
+model Payment {
+  id      String @id @default(cuid())
+  orderId String @unique
+  order   Order  @relation(fields: [orderId], references: [id])
+
+  provider          PaymentProvider @default(PAYFAST)
+  providerPaymentId String?
+
+  amount Decimal
+  fee    Decimal? // Payment provider fee
+
+  status PaymentStatus @default(PENDING)
+
+  // PayFast specific
+  pfPaymentId String?
+  pfReference String?
+
+  // Yoco specific
+  yocoCheckoutId String?
+  yocoChargeId   String?
+
+  // COD specific
+  codCollectedAt   DateTime?
+  codCollectedBy   String? // Driver ID
+
+  metadata Json?
+
+  createdAt DateTime  @default(now())
+  paidAt    DateTime?
+
+  @@index([providerPaymentId])
+  @@index([yocoCheckoutId])
+}
+
+// ============== DELIVERY ZONES ==============
+
+model DeliveryZone {
+  id      String   @id @default(cuid())
+  name    String // "Warrenton", "Jan Kempdorp", etc.
+  suburbs String @default("[]") // JSON array of suburb names
+  towns   String @default("[]") // JSON array of town names for rural areas
+
+  deliveryType DeliveryType @default(COURIER)
+  baseFee      Decimal
+  freeAbove    Decimal? // Free delivery over this amount
+
+  // COD specific
+  codAvailable Boolean  @default(false)
+  codFee       Decimal? // Extra fee for COD if any
+
+  // Delivery windows
+  estimatedDays String? // "Same day", "1-2 days"
+  sameDayCutoff String? // "14:00" - orders before this get same-day
+
+  isActive  Boolean @default(true)
+  sortOrder Int     @default(0)
+
+  @@index([isActive])
+  @@index([deliveryType])
+}
+
+// ============== PROMO CODES (Future) ==============
+
+model PromoCode {
+  id          String  @id @default(cuid())
+  code        String  @unique
+  description String?
+
+  discountType  String // "percentage" or "fixed"
+  discountValue Decimal
+
+  minOrderAmount Decimal?
+  maxUses        Int?
+  usedCount      Int      @default(0)
+
+  startsAt  DateTime?
+  expiresAt DateTime?
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@index([code])
+  @@index([isActive])
+}
+
+// ============== STORE SETTINGS ==============
+
+model StoreSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Json
+  updatedAt DateTime @updatedAt
+}
