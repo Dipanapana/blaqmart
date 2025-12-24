@@ -27,7 +27,16 @@
       "Bash(npm run build:*)",
       "Bash(npm i:*)",
       "Bash(git init:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nBlaqmart Stationery - Production Ready\n\n## Features\n- Complete e-commerce platform for school stationery\n- Shop by Grade \\(Grade R to Matric\\)\n- Stationery pack bundles\n- Custom hamper builder\n- PayFast & Yoco payment integration\n- Cash on Delivery for local areas\n- Admin dashboard for products, orders, categories\n\n## Tech Stack\n- Next.js 14 App Router\n- Prisma ORM \\(SQLite dev / PostgreSQL prod\\)\n- Tailwind CSS + Radix UI\n- NextAuth.js authentication\n- Supabase for image storage\n\n## Target Market\nNorthern Cape: Warrenton, Jan Kempdorp, Hartswater, Christiana\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git remote add:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(git commit:*)",
+      "Bash(set \"DATABASE_URL=postgresql://postgres:rTyZJHSasGOHstbhPIUWpFxCWLNIMcNI@gondola.proxy.rlwy.net:41684/railway\")",
+      "Bash($env:DATABASE_URL=\"postgresql://postgres:rTyZJHSasGOHstbhPIUWpFxCWLNIMcNI@gondola.proxy.rlwy.net:41684/railway\")",
+      "Bash(set \"PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION=YES\")",
+      "Bash(powershell -Command \"$env:DATABASE_URL=''postgresql://postgres:rTyZJHSasGOHstbhPIUWpFxCWLNIMcNI@gondola.proxy.rlwy.net:41684/railway''; npx prisma db seed\")"
     ],
     "deny": [],
     "ask": []

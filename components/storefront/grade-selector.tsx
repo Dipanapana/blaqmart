@@ -247,11 +247,13 @@ export function GradeSelectorCompact({
   grades = defaultGrades,
   selectedGrade,
   onSelect,
+  useLinks = true,
   className,
 }: {
   grades?: Grade[]
   selectedGrade?: string
   onSelect?: (slug: string) => void
+  useLinks?: boolean
   className?: string
 }) {
   return (
@@ -264,18 +266,16 @@ export function GradeSelectorCompact({
         const phase = phases.find((p) => p.slugs.includes(grade.slug))
         const isSelected = selectedGrade === grade.slug
 
-        return (
-          <motion.button
-            key={grade.id}
+        const buttonContent = (
+          <motion.span
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: index * 0.03 }}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => onSelect?.(grade.slug)}
-            data-testid={`grade-filter-${grade.id}`}
+            data-testid={`grade-filter-${grade.slug}`}
             className={cn(
-              'px-4 py-2.5 rounded-full text-sm font-semibold transition-all duration-200',
+              'inline-flex items-center justify-center px-4 py-2.5 rounded-full text-sm font-semibold transition-all duration-200',
               'min-h-[44px] min-w-[44px] border-2', // Touch target
               isSelected
                 ? `bg-gradient-to-r ${phase?.gradient || 'from-primary to-primary/80'} text-white border-transparent shadow-lg`
@@ -283,7 +283,29 @@ export function GradeSelectorCompact({
             )}
           >
             {grade.name.replace('Grade ', 'Gr ')}
-          </motion.button>
+          </motion.span>
+        )
+
+        if (useLinks) {
+          return (
+            <Link
+              key={grade.id}
+              href={`/grades/${grade.slug}`}
+              className="inline-block"
+            >
+              {buttonContent}
+            </Link>
+          )
+        }
+
+        return (
+          <button
+            key={grade.id}
+            onClick={() => onSelect?.(grade.slug)}
+            className="inline-block"
+          >
+            {buttonContent}
+          </button>
         )
       })}
     </motion.div>

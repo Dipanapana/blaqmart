@@ -18,7 +18,7 @@ async function getGradeData(slug: string) {
 
   if (!grade) return null
 
-  const [packs, products, allGrades] = await Promise.all([
+  const [packs, productGrades, allGrades, allProducts] = await Promise.all([
     db.stationeryPack.findMany({
       where: { gradeId: grade.id, isActive: true },
       include: {
@@ -31,19 +31,31 @@ async function getGradeData(slug: string) {
       },
       orderBy: { sortOrder: 'asc' },
     }),
-    db.product.findMany({
-      where: {
-        isActive: true,
-        tags: { contains: grade.slug },
+    // Get products linked to this grade via ProductGrade relation
+    db.productGrade.findMany({
+      where: { gradeId: grade.id },
+      include: {
+        product: {
+          include: { category: true },
+        },
       },
-      take: 12,
-      orderBy: { createdAt: 'desc' },
     }),
     db.grade.findMany({
       where: { isActive: true },
       orderBy: { sortOrder: 'asc' },
     }),
+    // Also get all active products (for grades without specific products assigned)
+    db.product.findMany({
+      where: { isActive: true },
+      take: 12,
+      orderBy: { isFeatured: 'desc' },
+    }),
   ])
+
+  // Use products from ProductGrade relation if available, otherwise show featured products
+  const products = productGrades.length > 0
+    ? productGrades.map(pg => pg.product).filter(p => p.isActive)
+    : allProducts
 
   return { grade, packs, products, allGrades }
 }
