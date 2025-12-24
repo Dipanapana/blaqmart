@@ -23,9 +23,12 @@ export function ProductGrid({ products, columns = 4 }: ProductGridProps) {
     4: "grid-cols-2 md:grid-cols-3 lg:grid-cols-4",
   }
 
+  // Filter out products without valid IDs to prevent duplicate key warnings
+  const validProducts = products.filter(product => product.id && product.id.length > 0)
+
   return (
     <div className={`grid gap-4 ${gridCols[columns]}`}>
-      {products.map((product) => (
+      {validProducts.map((product, index) => (
         <ProductCard
           key={product.id}
           id={product.id}
@@ -38,6 +41,7 @@ export function ProductGrid({ products, columns = 4 }: ProductGridProps) {
           image={product.images[0]}
           stock={product.stock}
           isFeatured={product.isFeatured}
+          index={index}
         />
       ))}
     </div>

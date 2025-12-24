@@ -8,6 +8,7 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
+  SheetDescription,
 } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -27,6 +28,9 @@ export function CartDrawer() {
       <SheetContent className="flex w-full flex-col sm:max-w-md">
         <SheetHeader>
           <SheetTitle>Your Cart ({items.length})</SheetTitle>
+          <SheetDescription className="sr-only">
+            Review your shopping cart items and proceed to checkout
+          </SheetDescription>
         </SheetHeader>
 
         {items.length === 0 ? (

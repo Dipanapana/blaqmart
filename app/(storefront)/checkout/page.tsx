@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import Image from "next/image"
 import Link from "next/link"
+import { motion, AnimatePresence } from "framer-motion"
 import {
   ChevronRight,
   MapPin,
@@ -13,6 +14,13 @@ import {
   ShoppingBag,
   Check,
   Loader2,
+  School,
+  Home,
+  User,
+  Phone,
+  GraduationCap,
+  Sparkles,
+  Gift,
 } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -35,30 +43,87 @@ import { useCart } from "@/hooks/use-cart"
 import { formatPrice } from "@/lib/utils"
 import { EmptyState } from "@/components/shared/empty-state"
 import { LocationDetector } from "@/components/checkout/location-detector"
-import { DeliveryZoneChecker } from "@/components/checkout/delivery-zone-checker"
+import { fadeInUp, staggerContainer, springConfig } from "@/lib/animations"
 
-const addressSchema = z.object({
+// School type for API response
+interface SchoolData {
+  id: string
+  name: string
+  slug: string
+  town: string
+  address?: string
+  logo?: string
+  isPartner: boolean
+}
+
+// Form schema with conditional validation
+const checkoutSchema = z.object({
+  // Delivery method
+  deliveryMethod: z.enum(["home", "school"]),
+
+  // Contact info (always required)
   email: z.string().email("Please enter a valid email"),
   phone: z.string().min(10, "Please enter a valid phone number"),
-  recipientName: z.string().min(2, "Please enter recipient name"),
-  streetAddress: z.string().min(5, "Please enter street address"),
-  town: z.string().min(2, "Please select a town"),
-  suburb: z.string().optional(), // Optional for rural areas
-  city: z.string().min(2, "Please enter city"),
-  postalCode: z.string().min(4, "Please enter postal code"),
-  province: z.string().min(1, "Please select a province"),
-  deliveryDate: z.string().min(1, "Please select a delivery date"),
-  deliverySlot: z.string().min(1, "Please select a delivery time"),
+
+  // School collection fields
+  schoolId: z.string().optional(),
+  collectorName: z.string().optional(),
+  collectorPhone: z.string().optional(),
+  childName: z.string().optional(),
+  childGrade: z.string().optional(),
+
+  // Home delivery fields
+  recipientName: z.string().optional(),
+  streetAddress: z.string().optional(),
+  town: z.string().optional(),
+  suburb: z.string().optional(),
+  city: z.string().optional(),
+  postalCode: z.string().optional(),
+  province: z.string().optional(),
+
+  // Delivery options
+  deliveryDate: z.string().optional(),
+  deliverySlot: z.string().optional(),
   deliveryNotes: z.string().optional(),
   saveAddress: z.boolean().optional(),
+
+  // Payment
   paymentMethod: z.enum(["payfast", "yoco", "cod"]),
+}).superRefine((data, ctx) => {
+  if (data.deliveryMethod === "school") {
+    if (!data.schoolId) {
+      ctx.addIssue({ code: "custom", message: "Please select a school", path: ["schoolId"] })
+    }
+    if (!data.collectorName || data.collectorName.length < 2) {
+      ctx.addIssue({ code: "custom", message: "Please enter collector name", path: ["collectorName"] })
+    }
+    if (!data.collectorPhone || data.collectorPhone.length < 10) {
+      ctx.addIssue({ code: "custom", message: "Please enter collector phone", path: ["collectorPhone"] })
+    }
+  } else {
+    if (!data.recipientName || data.recipientName.length < 2) {
+      ctx.addIssue({ code: "custom", message: "Please enter recipient name", path: ["recipientName"] })
+    }
+    if (!data.streetAddress || data.streetAddress.length < 5) {
+      ctx.addIssue({ code: "custom", message: "Please enter street address", path: ["streetAddress"] })
+    }
+    if (!data.town || data.town.length < 2) {
+      ctx.addIssue({ code: "custom", message: "Please select a town", path: ["town"] })
+    }
+    if (!data.deliveryDate) {
+      ctx.addIssue({ code: "custom", message: "Please select a delivery date", path: ["deliveryDate"] })
+    }
+    if (!data.deliverySlot) {
+      ctx.addIssue({ code: "custom", message: "Please select a delivery time", path: ["deliverySlot"] })
+    }
+  }
 })
 
-type AddressForm = z.infer<typeof addressSchema>
+type CheckoutForm = z.infer<typeof checkoutSchema>
 
 const steps = [
-  { id: 0, name: "Address", icon: MapPin },
-  { id: 1, name: "Delivery", icon: Truck },
+  { id: 0, name: "Method", icon: Truck },
+  { id: 1, name: "Details", icon: MapPin },
   { id: 2, name: "Payment", icon: CreditCard },
 ]
 
@@ -90,42 +155,76 @@ const provinces = [
   { value: "North West", label: "North West" },
 ]
 
+const grades = [
+  "Grade R", "Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6",
+  "Grade 7", "Grade 8", "Grade 9", "Grade 10", "Grade 11", "Grade 12"
+]
+
 export default function CheckoutPage() {
   const router = useRouter()
   const { data: session } = useSession()
   const { items, subtotal, giftMessage, clearCart } = useCart()
   const [currentStep, setCurrentStep] = useState(0)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [schools, setSchools] = useState<SchoolData[]>([])
+  const [loadingSchools, setLoadingSchools] = useState(true)
 
   const {
     register,
     handleSubmit,
     watch,
     setValue,
+    trigger,
     formState: { errors },
-  } = useForm<AddressForm>({
-    resolver: zodResolver(addressSchema),
+  } = useForm<CheckoutForm>({
+    resolver: zodResolver(checkoutSchema),
     defaultValues: {
+      deliveryMethod: "home",
       province: "Northern Cape",
       city: "Warrenton",
       paymentMethod: "yoco",
     },
   })
 
+  const deliveryMethod = watch("deliveryMethod")
   const selectedTown = watch("town")
+  const selectedSchoolId = watch("schoolId")
   const selectedTownData = deliveryTowns.find(t => t.name === selectedTown)
-  const isCodAvailable = selectedTownData?.codAvailable ?? false
-  const baseDeliveryFee = selectedTownData?.deliveryFee ?? 0
+  const selectedSchool = schools.find(s => s.id === selectedSchoolId)
+
+  // COD only available for home delivery to local areas
+  const isCodAvailable = deliveryMethod === "home" && (selectedTownData?.codAvailable ?? false)
+  const baseDeliveryFee = deliveryMethod === "school" ? 0 : (selectedTownData?.deliveryFee ?? 0)
   const deliveryFee = subtotal() >= 500 ? 0 : baseDeliveryFee
   const total = subtotal() + deliveryFee
-  const estimatedDelivery = selectedTownData?.estimatedDays ?? ""
+  const estimatedDelivery = deliveryMethod === "school"
+    ? "1-2 school days"
+    : (selectedTownData?.estimatedDays ?? "")
+
+  // Fetch partner schools
+  useEffect(() => {
+    async function fetchSchools() {
+      try {
+        const res = await fetch('/api/schools?partners=true')
+        const data = await res.json()
+        if (data.success) {
+          setSchools(data.data)
+        }
+      } catch (error) {
+        console.error('Failed to fetch schools:', error)
+      } finally {
+        setLoadingSchools(false)
+      }
+    }
+    fetchSchools()
+  }, [])
 
   // Reset payment method to yoco if COD is not available
   useEffect(() => {
-    if (selectedTown && !isCodAvailable && watch("paymentMethod") === "cod") {
+    if (!isCodAvailable && watch("paymentMethod") === "cod") {
       setValue("paymentMethod", "yoco")
     }
-  }, [selectedTown, isCodAvailable, setValue, watch])
+  }, [deliveryMethod, selectedTown, isCodAvailable, setValue, watch])
 
   // Generate available dates (today + next 7 days)
   const availableDates = Array.from({ length: 7 }, (_, i) => {
@@ -147,10 +246,20 @@ export default function CheckoutPage() {
     if (session?.user) {
       setValue("email", session.user.email || "")
       setValue("recipientName", session.user.name || "")
+      setValue("collectorName", session.user.name || "")
     }
   }, [session, setValue])
 
-  const onSubmit = async (data: AddressForm) => {
+  const handleStepChange = async (nextStep: number) => {
+    // Validate current step before proceeding
+    if (nextStep > currentStep) {
+      const isValid = await trigger()
+      if (!isValid) return
+    }
+    setCurrentStep(nextStep)
+  }
+
+  const onSubmit = async (data: CheckoutForm) => {
     if (currentStep < 2) {
       setCurrentStep(currentStep + 1)
       return
@@ -159,6 +268,8 @@ export default function CheckoutPage() {
     setIsProcessing(true)
 
     try {
+      const isSchoolCollection = data.deliveryMethod === "school"
+
       // Create order
       const response = await fetch("/api/orders", {
         method: "POST",
@@ -168,17 +279,25 @@ export default function CheckoutPage() {
             productId: item.productId,
             quantity: item.quantity,
           })),
-          shippingAddress: {
+          deliveryMethod: data.deliveryMethod,
+          // School collection fields
+          schoolId: isSchoolCollection ? data.schoolId : undefined,
+          collectorName: isSchoolCollection ? data.collectorName : undefined,
+          collectorPhone: isSchoolCollection ? data.collectorPhone : undefined,
+          childName: isSchoolCollection ? data.childName : undefined,
+          childGrade: isSchoolCollection ? data.childGrade : undefined,
+          // Home delivery fields
+          shippingAddress: isSchoolCollection ? undefined : {
             recipientName: data.recipientName,
             phone: data.phone,
             streetAddress: data.streetAddress,
-            suburb: data.town, // Use town as suburb for rural areas
-            city: data.city,
-            postalCode: data.postalCode,
-            province: data.province,
+            suburb: data.town,
+            city: data.city || data.town,
+            postalCode: data.postalCode || "0000",
+            province: data.province || "Northern Cape",
           },
-          deliveryDate: data.deliveryDate,
-          deliverySlot: data.deliverySlot,
+          deliveryDate: isSchoolCollection ? undefined : data.deliveryDate,
+          deliverySlot: isSchoolCollection ? undefined : data.deliverySlot,
           deliveryNotes: data.deliveryNotes,
           giftMessage,
           guestEmail: session ? undefined : data.email,
@@ -220,619 +339,1061 @@ export default function CheckoutPage() {
 
   return (
     <div className="container py-8">
-      <h1 className="mb-8 text-3xl font-bold">Checkout</h1>
+      <motion.h1
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-8 text-3xl font-bold"
+      >
+        Checkout
+      </motion.h1>
 
       {/* Progress Steps */}
-      <div className="mb-8">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="mb-8"
+      >
         <div className="flex items-center justify-center">
           {steps.map((step, index) => (
             <div key={step.id} className="flex items-center">
-              <button
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => index < currentStep && setCurrentStep(step.id)}
-                className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all duration-300 ${
                   currentStep >= step.id
-                    ? "bg-primary text-primary-foreground"
+                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
                     : "bg-muted text-muted-foreground"
                 }`}
               >
                 {currentStep > step.id ? (
-                  <Check className="h-4 w-4" />
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={springConfig.bouncy}
+                  >
+                    <Check className="h-4 w-4" />
+                  </motion.div>
                 ) : (
                   <step.icon className="h-4 w-4" />
                 )}
                 <span className="hidden sm:inline">{step.name}</span>
-              </button>
+              </motion.button>
               {index < steps.length - 1 && (
                 <ChevronRight className="mx-2 h-5 w-5 text-muted-foreground" />
               )}
             </div>
           ))}
         </div>
-      </div>
+      </motion.div>
 
       <form onSubmit={handleSubmit(onSubmit)}>
         <div className="grid gap-8 lg:grid-cols-3">
           {/* Main Form */}
           <div className="lg:col-span-2">
-            {/* Step 0: Address */}
-            {currentStep === 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Delivery Address</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {!session && (
-                    <div className="rounded-lg bg-muted p-4">
-                      <p className="text-sm text-muted-foreground">
-                        <Link
-                          href="/login?callbackUrl=/checkout"
-                          className="text-primary hover:underline"
+            <AnimatePresence mode="wait">
+              {/* Step 0: Delivery Method */}
+              {currentStep === 0 && (
+                <motion.div
+                  key="step-0"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={springConfig.gentle}
+                >
+                  <Card className="overflow-hidden">
+                    <CardHeader className="bg-gradient-to-r from-primary/5 to-accent/5">
+                      <CardTitle className="flex items-center gap-2">
+                        <Truck className="h-5 w-5 text-primary" />
+                        How would you like to receive your order?
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6 space-y-6">
+                      {/* Delivery Method Selection */}
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        {/* Home Delivery */}
+                        <motion.button
+                          type="button"
+                          whileHover={{ scale: 1.02, y: -4 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => setValue("deliveryMethod", "home")}
+                          className={`relative rounded-2xl border-2 p-6 text-left transition-all duration-300 ${
+                            deliveryMethod === "home"
+                              ? "border-primary bg-gradient-to-br from-primary/5 to-primary/10 shadow-lg shadow-primary/10"
+                              : "border-gray-200 hover:border-primary/40 hover:bg-gray-50"
+                          }`}
                         >
-                          Sign in
-                        </Link>{" "}
-                        for a faster checkout experience
-                      </p>
-                    </div>
-                  )}
-
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="you@example.com"
-                        {...register("email")}
-                      />
-                      {errors.email && (
-                        <p className="text-sm text-destructive">
-                          {errors.email.message}
-                        </p>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone</Label>
-                      <Input
-                        id="phone"
-                        type="tel"
-                        placeholder="+27 12 345 6789"
-                        {...register("phone")}
-                      />
-                      {errors.phone && (
-                        <p className="text-sm text-destructive">
-                          {errors.phone.message}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <Separator className="my-6" />
-
-                  <LocationDetector
-                    onLocationDetected={(address) => {
-                      setValue("streetAddress", address.streetAddress)
-                      setValue("suburb", address.suburb)
-                      setValue("city", address.city)
-                      setValue("province", address.province)
-                      setValue("postalCode", address.postalCode)
-                    }}
-                  />
-
-                  <Separator className="my-6" />
-
-                  <div className="space-y-2">
-                    <Label htmlFor="recipientName">Recipient Name</Label>
-                    <Input
-                      id="recipientName"
-                      placeholder="Who will receive this order?"
-                      {...register("recipientName")}
-                    />
-                    {errors.recipientName && (
-                      <p className="text-sm text-destructive">
-                        {errors.recipientName.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="streetAddress">Street Address</Label>
-                    <Input
-                      id="streetAddress"
-                      placeholder="123 Main Street, Apartment 4B"
-                      {...register("streetAddress")}
-                    />
-                    {errors.streetAddress && (
-                      <p className="text-sm text-destructive">
-                        {errors.streetAddress.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="town">Town</Label>
-                      <Select
-                        onValueChange={(value) => {
-                          setValue("town", value)
-                          // Auto-set city based on town
-                          setValue("city", value)
-                        }}
-                      >
-                        <SelectTrigger data-testid="town-select">
-                          <SelectValue placeholder="Select your town" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <div className="px-2 py-1 text-xs font-semibold text-muted-foreground">
-                            Local Delivery (Free, COD Available)
-                          </div>
-                          {deliveryTowns.filter(t => t.type === "local").map((town) => (
-                            <SelectItem key={town.name} value={town.name}>
-                              <div className="flex items-center gap-2">
-                                <span>{town.name}</span>
-                                <span className="text-xs text-green-600">Free delivery</span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                          <div className="px-2 py-1 text-xs font-semibold text-muted-foreground mt-2">
-                            Courier Delivery
-                          </div>
-                          {deliveryTowns.filter(t => t.type === "courier").map((town) => (
-                            <SelectItem key={town.name} value={town.name}>
-                              <div className="flex items-center gap-2">
-                                <span>{town.name}</span>
-                                <span className="text-xs text-muted-foreground">
-                                  R{town.deliveryFee} • {town.estimatedDays}
+                          <div className="flex items-start gap-4">
+                            <div className={`rounded-xl p-3 ${
+                              deliveryMethod === "home"
+                                ? "bg-primary text-white"
+                                : "bg-gray-100 text-gray-500"
+                            }`}>
+                              <Home className="h-6 w-6" />
+                            </div>
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-lg">Home Delivery</h3>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                We deliver to your door in Warrenton, Jan Kempdorp & surrounding areas
+                              </p>
+                              <div className="mt-3 flex flex-wrap gap-2">
+                                <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                                  <Check className="h-3 w-3" /> COD Available
+                                </span>
+                                <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
+                                  Same Day Delivery
                                 </span>
                               </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {errors.town && (
-                        <p className="text-sm text-destructive">
-                          {errors.town.message}
-                        </p>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="postalCode">Postal Code</Label>
-                      <Input
-                        id="postalCode"
-                        placeholder="8530"
-                        {...register("postalCode")}
-                      />
-                      {errors.postalCode && (
-                        <p className="text-sm text-destructive">
-                          {errors.postalCode.message}
-                        </p>
-                      )}
-                    </div>
-                  </div>
+                            </div>
+                          </div>
+                          {deliveryMethod === "home" && (
+                            <motion.div
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              className="absolute -top-2 -right-2 rounded-full bg-primary p-1.5 text-white shadow-lg"
+                            >
+                              <Check className="h-4 w-4" />
+                            </motion.div>
+                          )}
+                        </motion.button>
 
-                  {/* Delivery info based on town */}
-                  {selectedTownData && (
-                    <div className={`rounded-lg p-4 ${selectedTownData.type === 'local' ? 'bg-green-50 border border-green-200' : 'bg-blue-50 border border-blue-200'}`}>
-                      <div className="flex items-center gap-2">
-                        <Truck className={`h-5 w-5 ${selectedTownData.type === 'local' ? 'text-green-600' : 'text-blue-600'}`} />
-                        <div>
-                          <p className="font-medium">
-                            {selectedTownData.type === 'local' ? 'Local Delivery' : 'Courier Delivery'}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            {selectedTownData.estimatedDays} •{' '}
-                            {deliveryFee === 0 ? (
-                              <span className="text-green-600 font-medium">Free delivery</span>
-                            ) : (
-                              `R${deliveryFee} delivery fee`
+                        {/* School Collection */}
+                        <motion.button
+                          type="button"
+                          whileHover={{ scale: 1.02, y: -4 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => setValue("deliveryMethod", "school")}
+                          className={`relative rounded-2xl border-2 p-6 text-left transition-all duration-300 ${
+                            deliveryMethod === "school"
+                              ? "border-accent bg-gradient-to-br from-accent/5 to-accent/10 shadow-lg shadow-accent/10"
+                              : "border-gray-200 hover:border-accent/40 hover:bg-gray-50"
+                          }`}
+                        >
+                          <div className="flex items-start gap-4">
+                            <div className={`rounded-xl p-3 ${
+                              deliveryMethod === "school"
+                                ? "bg-accent text-white"
+                                : "bg-gray-100 text-gray-500"
+                            }`}>
+                              <School className="h-6 w-6" />
+                            </div>
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-lg flex items-center gap-2">
+                                Collect at School
+                                <span className="inline-flex items-center gap-0.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 px-2 py-0.5 text-[10px] font-bold text-amber-900">
+                                  <Sparkles className="h-2.5 w-2.5" />
+                                  NEW
+                                </span>
+                              </h3>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                We deliver to your child&apos;s school for easy collection
+                              </p>
+                              <div className="mt-3 flex flex-wrap gap-2">
+                                <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                                  <Check className="h-3 w-3" /> Free Delivery
+                                </span>
+                                <span className="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
+                                  Partner Schools
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          {deliveryMethod === "school" && (
+                            <motion.div
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              className="absolute -top-2 -right-2 rounded-full bg-accent p-1.5 text-white shadow-lg"
+                            >
+                              <Check className="h-4 w-4" />
+                            </motion.div>
+                          )}
+                        </motion.button>
+                      </div>
+
+                      <Separator />
+
+                      {/* Contact Info (always required) */}
+                      <div className="space-y-4">
+                        <h3 className="font-medium flex items-center gap-2">
+                          <User className="h-4 w-4 text-primary" />
+                          Contact Information
+                        </h3>
+                        {!session && (
+                          <div className="rounded-lg bg-muted p-4">
+                            <p className="text-sm text-muted-foreground">
+                              <Link
+                                href="/login?callbackUrl=/checkout"
+                                className="text-primary hover:underline font-medium"
+                              >
+                                Sign in
+                              </Link>{" "}
+                              for a faster checkout experience
+                            </p>
+                          </div>
+                        )}
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <div className="space-y-2">
+                            <Label htmlFor="email">Email</Label>
+                            <Input
+                              id="email"
+                              type="email"
+                              placeholder="you@example.com"
+                              {...register("email")}
+                              className="h-11"
+                            />
+                            {errors.email && (
+                              <p className="text-sm text-destructive">
+                                {errors.email.message}
+                              </p>
                             )}
-                            {selectedTownData.codAvailable && (
-                              <span className="ml-2 text-green-600">• Cash on Delivery available</span>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="phone">Phone</Label>
+                            <Input
+                              id="phone"
+                              type="tel"
+                              placeholder="+27 12 345 6789"
+                              {...register("phone")}
+                              className="h-11"
+                            />
+                            {errors.phone && (
+                              <p className="text-sm text-destructive">
+                                {errors.phone.message}
+                              </p>
                             )}
-                          </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              )}
 
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="city">City/Town</Label>
-                      <Input
-                        id="city"
-                        defaultValue="Warrenton"
-                        {...register("city")}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="province">Province</Label>
-                      <Select
-                        defaultValue="Northern Cape"
-                        onValueChange={(value) => setValue("province", value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select province" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {provinces.map((province) => (
-                            <SelectItem key={province.value} value={province.value}>
-                              {province.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  {session && (
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="saveAddress"
-                        {...register("saveAddress")}
-                      />
-                      <Label htmlFor="saveAddress" className="text-sm">
-                        Save this address for future orders
-                      </Label>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Step 1: Delivery */}
-            {currentStep === 1 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Delivery Options</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="space-y-2">
-                    <Label>Delivery Date</Label>
-                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-7">
-                      {availableDates.map((date) => (
-                        <button
-                          key={date.value}
-                          type="button"
-                          onClick={() => setValue("deliveryDate", date.value)}
-                          className={`rounded-lg border p-3 text-center transition-colors ${
-                            watch("deliveryDate") === date.value
-                              ? "border-primary bg-primary/10"
-                              : "hover:border-primary"
-                          }`}
+              {/* Step 1: Details */}
+              {currentStep === 1 && (
+                <motion.div
+                  key="step-1"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={springConfig.gentle}
+                >
+                  <Card className="overflow-hidden">
+                    <CardHeader className="bg-gradient-to-r from-primary/5 to-accent/5">
+                      <CardTitle className="flex items-center gap-2">
+                        {deliveryMethod === "school" ? (
+                          <>
+                            <School className="h-5 w-5 text-accent" />
+                            School Collection Details
+                          </>
+                        ) : (
+                          <>
+                            <MapPin className="h-5 w-5 text-primary" />
+                            Delivery Details
+                          </>
+                        )}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6 space-y-6">
+                      {deliveryMethod === "school" ? (
+                        // School Collection Form
+                        <motion.div
+                          variants={staggerContainer}
+                          initial="hidden"
+                          animate="visible"
+                          className="space-y-6"
                         >
-                          <p className="text-xs text-muted-foreground">
-                            {date.isToday ? "Today" : date.label.split(" ")[0]}
-                          </p>
-                          <p className="font-semibold">
-                            {date.label.split(" ")[1]}
-                          </p>
-                          <p className="text-xs">
-                            {date.label.split(" ")[2]}
-                          </p>
-                        </button>
-                      ))}
-                    </div>
-                    {errors.deliveryDate && (
-                      <p className="text-sm text-destructive">
-                        {errors.deliveryDate.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Delivery Time</Label>
-                    <div className="grid gap-2 sm:grid-cols-3">
-                      {deliverySlots.map((slot) => (
-                        <button
-                          key={slot.id}
-                          type="button"
-                          onClick={() => setValue("deliverySlot", slot.id)}
-                          className={`rounded-lg border p-4 text-left transition-colors ${
-                            watch("deliverySlot") === slot.id
-                              ? "border-primary bg-primary/10"
-                              : "hover:border-primary"
-                          }`}
-                        >
-                          <p className="font-medium">{slot.label}</p>
-                        </button>
-                      ))}
-                    </div>
-                    {errors.deliverySlot && (
-                      <p className="text-sm text-destructive">
-                        {errors.deliverySlot.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="deliveryNotes">
-                      Delivery Notes (Optional)
-                    </Label>
-                    <Textarea
-                      id="deliveryNotes"
-                      placeholder="Gate code, building instructions, etc."
-                      {...register("deliveryNotes")}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Step 2: Payment */}
-            {currentStep === 2 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Review & Pay</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {/* Payment Method Selection */}
-                  <div className="space-y-3">
-                    <h3 className="font-medium">Payment Method</h3>
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                      {/* Yoco (Recommended) */}
-                      <button
-                        type="button"
-                        data-testid="payment-yoco"
-                        onClick={() => setValue("paymentMethod", "yoco")}
-                        className={`rounded-lg border p-4 text-left transition-colors ${
-                          watch("paymentMethod") === "yoco"
-                            ? "border-primary bg-primary/10 ring-2 ring-primary"
-                            : "hover:border-primary"
-                        }`}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <p className="font-medium">
-                              Card / EFT
-                              <span className="ml-2 text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">
-                                Recommended
-                              </span>
-                            </p>
-                            <p className="mt-1 text-xs text-muted-foreground">
-                              Pay securely with Yoco
-                            </p>
-                          </div>
-                          <CreditCard className="h-5 w-5 text-muted-foreground" />
-                        </div>
-                      </button>
-
-                      {/* PayFast */}
-                      <button
-                        type="button"
-                        data-testid="payment-payfast"
-                        onClick={() => setValue("paymentMethod", "payfast")}
-                        className={`rounded-lg border p-4 text-left transition-colors ${
-                          watch("paymentMethod") === "payfast"
-                            ? "border-primary bg-primary/10 ring-2 ring-primary"
-                            : "hover:border-primary"
-                        }`}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <p className="font-medium">PayFast</p>
-                            <p className="mt-1 text-xs text-muted-foreground">
-                              Card, EFT, or Instant EFT
-                            </p>
-                          </div>
-                          <CreditCard className="h-5 w-5 text-muted-foreground" />
-                        </div>
-                      </button>
-
-                      {/* COD - Only for local delivery */}
-                      {isCodAvailable ? (
-                        <button
-                          type="button"
-                          data-testid="payment-cod"
-                          onClick={() => setValue("paymentMethod", "cod")}
-                          className={`rounded-lg border p-4 text-left transition-colors ${
-                            watch("paymentMethod") === "cod"
-                              ? "border-primary bg-primary/10 ring-2 ring-primary"
-                              : "hover:border-primary"
-                          }`}
-                        >
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <p className="font-medium">Cash on Delivery</p>
-                              <p className="mt-1 text-xs text-muted-foreground">
-                                Pay when you receive your order
+                          {/* School Selector */}
+                          <motion.div variants={fadeInUp} className="space-y-2">
+                            <Label htmlFor="schoolId" className="flex items-center gap-2">
+                              <School className="h-4 w-4 text-accent" />
+                              Select School
+                            </Label>
+                            {loadingSchools ? (
+                              <div className="flex items-center gap-2 text-muted-foreground">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Loading schools...
+                              </div>
+                            ) : schools.length === 0 ? (
+                              <div className="rounded-lg bg-amber-50 border border-amber-200 p-4">
+                                <p className="text-sm text-amber-800">
+                                  No partner schools available yet. Please choose home delivery.
+                                </p>
+                              </div>
+                            ) : (
+                              <Select
+                                onValueChange={(value) => setValue("schoolId", value)}
+                                value={selectedSchoolId}
+                              >
+                                <SelectTrigger className="h-12">
+                                  <SelectValue placeholder="Choose your child's school" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {schools.map((school) => (
+                                    <SelectItem key={school.id} value={school.id}>
+                                      <div className="flex items-center gap-2">
+                                        <School className="h-4 w-4 text-accent" />
+                                        <span>{school.name}</span>
+                                        <span className="text-xs text-muted-foreground">
+                                          ({school.town})
+                                        </span>
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                            {errors.schoolId && (
+                              <p className="text-sm text-destructive">
+                                {errors.schoolId.message}
                               </p>
-                            </div>
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-5 w-5 text-muted-foreground"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <rect x="2" y="5" width="20" height="14" rx="2" />
-                              <line x1="2" y1="10" x2="22" y2="10" />
-                            </svg>
-                          </div>
-                        </button>
-                      ) : (
-                        <div className="rounded-lg border border-dashed p-4 bg-muted/50">
-                          <div className="flex items-start justify-between opacity-50">
-                            <div>
-                              <p className="font-medium">Cash on Delivery</p>
-                              <p className="mt-1 text-xs text-muted-foreground">
-                                Only available for Warrenton & Jan Kempdorp
-                              </p>
-                            </div>
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-5 w-5 text-muted-foreground"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <rect x="2" y="5" width="20" height="14" rx="2" />
-                              <line x1="2" y1="10" x2="22" y2="10" />
-                            </svg>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                            )}
+                          </motion.div>
 
-                  <Separator />
+                          {/* School Info */}
+                          {selectedSchool && (
+                            <motion.div
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              className="rounded-xl bg-gradient-to-r from-accent/10 to-accent/5 p-4 border border-accent/20"
+                            >
+                              <div className="flex items-start gap-3">
+                                <div className="rounded-lg bg-accent/20 p-2">
+                                  <School className="h-5 w-5 text-accent" />
+                                </div>
+                                <div>
+                                  <p className="font-medium">{selectedSchool.name}</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {selectedSchool.address || selectedSchool.town}
+                                  </p>
+                                  <p className="text-sm text-accent font-medium mt-1">
+                                    Estimated delivery: 1-2 school days
+                                  </p>
+                                </div>
+                              </div>
+                            </motion.div>
+                          )}
 
-                  {/* Order Summary */}
-                  <div className="space-y-4">
-                    <h3 className="font-medium">Order Items</h3>
-                    {items.map((item) => (
-                      <div key={item.id} className="flex gap-4">
-                        <div className="relative h-16 w-16 overflow-hidden rounded-md bg-muted">
-                          {item.image ? (
-                            <Image
-                              src={item.image}
-                              alt={item.name}
-                              fill
-                              className="object-cover"
+                          <Separator />
+
+                          {/* Collector Details */}
+                          <motion.div variants={fadeInUp} className="space-y-4">
+                            <h3 className="font-medium flex items-center gap-2">
+                              <User className="h-4 w-4 text-accent" />
+                              Who will collect?
+                            </h3>
+                            <div className="grid gap-4 sm:grid-cols-2">
+                              <div className="space-y-2">
+                                <Label htmlFor="collectorName">Collector Name</Label>
+                                <Input
+                                  id="collectorName"
+                                  placeholder="Parent or child's name"
+                                  {...register("collectorName")}
+                                  className="h-11"
+                                />
+                                {errors.collectorName && (
+                                  <p className="text-sm text-destructive">
+                                    {errors.collectorName.message}
+                                  </p>
+                                )}
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="collectorPhone">Collector Phone</Label>
+                                <Input
+                                  id="collectorPhone"
+                                  type="tel"
+                                  placeholder="+27 12 345 6789"
+                                  {...register("collectorPhone")}
+                                  className="h-11"
+                                />
+                                {errors.collectorPhone && (
+                                  <p className="text-sm text-destructive">
+                                    {errors.collectorPhone.message}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </motion.div>
+
+                          {/* Optional Child Info */}
+                          <motion.div variants={fadeInUp} className="space-y-4">
+                            <h3 className="font-medium flex items-center gap-2 text-muted-foreground">
+                              <GraduationCap className="h-4 w-4" />
+                              Child&apos;s Details (Optional - helps school identify order)
+                            </h3>
+                            <div className="grid gap-4 sm:grid-cols-2">
+                              <div className="space-y-2">
+                                <Label htmlFor="childName">Child&apos;s Name</Label>
+                                <Input
+                                  id="childName"
+                                  placeholder="Child's full name"
+                                  {...register("childName")}
+                                  className="h-11"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="childGrade">Child&apos;s Grade</Label>
+                                <Select onValueChange={(value) => setValue("childGrade", value)}>
+                                  <SelectTrigger className="h-11">
+                                    <SelectValue placeholder="Select grade" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {grades.map((grade) => (
+                                      <SelectItem key={grade} value={grade}>
+                                        {grade}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                          </motion.div>
+
+                          {/* Delivery Notes */}
+                          <motion.div variants={fadeInUp} className="space-y-2">
+                            <Label htmlFor="deliveryNotes">
+                              Additional Notes (Optional)
+                            </Label>
+                            <Textarea
+                              id="deliveryNotes"
+                              placeholder="Any special instructions for collection..."
+                              {...register("deliveryNotes")}
+                              rows={3}
                             />
+                          </motion.div>
+                        </motion.div>
+                      ) : (
+                        // Home Delivery Form
+                        <motion.div
+                          variants={staggerContainer}
+                          initial="hidden"
+                          animate="visible"
+                          className="space-y-6"
+                        >
+                          <motion.div variants={fadeInUp}>
+                            <LocationDetector
+                              onLocationDetected={(address) => {
+                                setValue("streetAddress", address.streetAddress)
+                                setValue("suburb", address.suburb)
+                                setValue("city", address.city)
+                                setValue("province", address.province)
+                                setValue("postalCode", address.postalCode)
+                              }}
+                            />
+                          </motion.div>
+
+                          <Separator />
+
+                          <motion.div variants={fadeInUp} className="space-y-2">
+                            <Label htmlFor="recipientName">Recipient Name</Label>
+                            <Input
+                              id="recipientName"
+                              placeholder="Who will receive this order?"
+                              {...register("recipientName")}
+                              className="h-11"
+                            />
+                            {errors.recipientName && (
+                              <p className="text-sm text-destructive">
+                                {errors.recipientName.message}
+                              </p>
+                            )}
+                          </motion.div>
+
+                          <motion.div variants={fadeInUp} className="space-y-2">
+                            <Label htmlFor="streetAddress">Street Address</Label>
+                            <Input
+                              id="streetAddress"
+                              placeholder="123 Main Street, Apartment 4B"
+                              {...register("streetAddress")}
+                              className="h-11"
+                            />
+                            {errors.streetAddress && (
+                              <p className="text-sm text-destructive">
+                                {errors.streetAddress.message}
+                              </p>
+                            )}
+                          </motion.div>
+
+                          <motion.div variants={fadeInUp} className="grid gap-4 sm:grid-cols-2">
+                            <div className="space-y-2">
+                              <Label htmlFor="town">Town</Label>
+                              <Select
+                                onValueChange={(value) => {
+                                  setValue("town", value)
+                                  setValue("city", value)
+                                }}
+                              >
+                                <SelectTrigger data-testid="town-select" className="h-11">
+                                  <SelectValue placeholder="Select your town" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <div className="px-2 py-1 text-xs font-semibold text-muted-foreground">
+                                    Local Delivery (Free, COD Available)
+                                  </div>
+                                  {deliveryTowns.filter(t => t.type === "local").map((town) => (
+                                    <SelectItem key={town.name} value={town.name}>
+                                      <div className="flex items-center gap-2">
+                                        <span>{town.name}</span>
+                                        <span className="text-xs text-green-600">Free</span>
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                  <div className="px-2 py-1 text-xs font-semibold text-muted-foreground mt-2">
+                                    Courier Delivery
+                                  </div>
+                                  {deliveryTowns.filter(t => t.type === "courier").map((town) => (
+                                    <SelectItem key={town.name} value={town.name}>
+                                      <div className="flex items-center gap-2">
+                                        <span>{town.name}</span>
+                                        <span className="text-xs text-muted-foreground">
+                                          R{town.deliveryFee}
+                                        </span>
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              {errors.town && (
+                                <p className="text-sm text-destructive">
+                                  {errors.town.message}
+                                </p>
+                              )}
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="postalCode">Postal Code</Label>
+                              <Input
+                                id="postalCode"
+                                placeholder="8530"
+                                {...register("postalCode")}
+                                className="h-11"
+                              />
+                            </div>
+                          </motion.div>
+
+                          {/* Delivery info based on town */}
+                          {selectedTownData && (
+                            <motion.div
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              className={`rounded-xl p-4 ${
+                                selectedTownData.type === 'local'
+                                  ? 'bg-green-50 border border-green-200'
+                                  : 'bg-blue-50 border border-blue-200'
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <Truck className={`h-5 w-5 ${
+                                  selectedTownData.type === 'local' ? 'text-green-600' : 'text-blue-600'
+                                }`} />
+                                <div>
+                                  <p className="font-medium">
+                                    {selectedTownData.type === 'local' ? 'Local Delivery' : 'Courier Delivery'}
+                                  </p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {selectedTownData.estimatedDays} •{' '}
+                                    {deliveryFee === 0 ? (
+                                      <span className="text-green-600 font-medium">Free delivery</span>
+                                    ) : (
+                                      `R${deliveryFee} delivery fee`
+                                    )}
+                                    {selectedTownData.codAvailable && (
+                                      <span className="ml-2 text-green-600">• COD available</span>
+                                    )}
+                                  </p>
+                                </div>
+                              </div>
+                            </motion.div>
+                          )}
+
+                          <motion.div variants={fadeInUp} className="grid gap-4 sm:grid-cols-2">
+                            <div className="space-y-2">
+                              <Label htmlFor="city">City/Town</Label>
+                              <Input
+                                id="city"
+                                {...register("city")}
+                                className="h-11"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="province">Province</Label>
+                              <Select
+                                defaultValue="Northern Cape"
+                                onValueChange={(value) => setValue("province", value)}
+                              >
+                                <SelectTrigger className="h-11">
+                                  <SelectValue placeholder="Select province" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {provinces.map((province) => (
+                                    <SelectItem key={province.value} value={province.value}>
+                                      {province.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </motion.div>
+
+                          <Separator />
+
+                          {/* Delivery Date & Time */}
+                          <motion.div variants={fadeInUp} className="space-y-4">
+                            <Label>Delivery Date</Label>
+                            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-7">
+                              {availableDates.map((date) => (
+                                <motion.button
+                                  key={date.value}
+                                  type="button"
+                                  whileHover={{ scale: 1.05 }}
+                                  whileTap={{ scale: 0.95 }}
+                                  onClick={() => setValue("deliveryDate", date.value)}
+                                  className={`rounded-xl border-2 p-3 text-center transition-all ${
+                                    watch("deliveryDate") === date.value
+                                      ? "border-primary bg-primary/10 shadow-md"
+                                      : "border-gray-200 hover:border-primary/40"
+                                  }`}
+                                >
+                                  <p className="text-xs text-muted-foreground">
+                                    {date.isToday ? "Today" : date.label.split(" ")[0]}
+                                  </p>
+                                  <p className="font-semibold">
+                                    {date.label.split(" ")[1]}
+                                  </p>
+                                  <p className="text-xs">
+                                    {date.label.split(" ")[2]}
+                                  </p>
+                                </motion.button>
+                              ))}
+                            </div>
+                            {errors.deliveryDate && (
+                              <p className="text-sm text-destructive">
+                                {errors.deliveryDate.message}
+                              </p>
+                            )}
+                          </motion.div>
+
+                          <motion.div variants={fadeInUp} className="space-y-4">
+                            <Label>Delivery Time</Label>
+                            <div className="grid gap-3 sm:grid-cols-3">
+                              {deliverySlots.map((slot) => (
+                                <motion.button
+                                  key={slot.id}
+                                  type="button"
+                                  whileHover={{ scale: 1.02 }}
+                                  whileTap={{ scale: 0.98 }}
+                                  onClick={() => setValue("deliverySlot", slot.id)}
+                                  className={`rounded-xl border-2 p-4 text-left transition-all ${
+                                    watch("deliverySlot") === slot.id
+                                      ? "border-primary bg-primary/10 shadow-md"
+                                      : "border-gray-200 hover:border-primary/40"
+                                  }`}
+                                >
+                                  <p className="font-medium">{slot.label}</p>
+                                </motion.button>
+                              ))}
+                            </div>
+                            {errors.deliverySlot && (
+                              <p className="text-sm text-destructive">
+                                {errors.deliverySlot.message}
+                              </p>
+                            )}
+                          </motion.div>
+
+                          <motion.div variants={fadeInUp} className="space-y-2">
+                            <Label htmlFor="deliveryNotes">
+                              Delivery Notes (Optional)
+                            </Label>
+                            <Textarea
+                              id="deliveryNotes"
+                              placeholder="Gate code, building instructions, etc."
+                              {...register("deliveryNotes")}
+                              rows={3}
+                            />
+                          </motion.div>
+
+                          {session && (
+                            <motion.div variants={fadeInUp} className="flex items-center space-x-2">
+                              <Checkbox
+                                id="saveAddress"
+                                {...register("saveAddress")}
+                              />
+                              <Label htmlFor="saveAddress" className="text-sm">
+                                Save this address for future orders
+                              </Label>
+                            </motion.div>
+                          )}
+                        </motion.div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              )}
+
+              {/* Step 2: Payment */}
+              {currentStep === 2 && (
+                <motion.div
+                  key="step-2"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={springConfig.gentle}
+                >
+                  <Card className="overflow-hidden">
+                    <CardHeader className="bg-gradient-to-r from-primary/5 to-accent/5">
+                      <CardTitle className="flex items-center gap-2">
+                        <CreditCard className="h-5 w-5 text-primary" />
+                        Review & Pay
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6 space-y-6">
+                      {/* Payment Method Selection */}
+                      <div className="space-y-4">
+                        <h3 className="font-medium">Payment Method</h3>
+                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                          {/* Yoco (Recommended) */}
+                          <motion.button
+                            type="button"
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            data-testid="payment-yoco"
+                            onClick={() => setValue("paymentMethod", "yoco")}
+                            className={`rounded-xl border-2 p-4 text-left transition-all ${
+                              watch("paymentMethod") === "yoco"
+                                ? "border-primary bg-primary/5 shadow-lg"
+                                : "border-gray-200 hover:border-primary/40"
+                            }`}
+                          >
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <p className="font-medium flex items-center gap-2">
+                                  Card / EFT
+                                  <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">
+                                    Recommended
+                                  </span>
+                                </p>
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                  Pay securely with Yoco
+                                </p>
+                              </div>
+                              <CreditCard className="h-5 w-5 text-muted-foreground" />
+                            </div>
+                          </motion.button>
+
+                          {/* PayFast */}
+                          <motion.button
+                            type="button"
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            data-testid="payment-payfast"
+                            onClick={() => setValue("paymentMethod", "payfast")}
+                            className={`rounded-xl border-2 p-4 text-left transition-all ${
+                              watch("paymentMethod") === "payfast"
+                                ? "border-primary bg-primary/5 shadow-lg"
+                                : "border-gray-200 hover:border-primary/40"
+                            }`}
+                          >
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <p className="font-medium">PayFast</p>
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                  Card, EFT, or Instant EFT
+                                </p>
+                              </div>
+                              <CreditCard className="h-5 w-5 text-muted-foreground" />
+                            </div>
+                          </motion.button>
+
+                          {/* COD - Only for home delivery to local areas */}
+                          {isCodAvailable ? (
+                            <motion.button
+                              type="button"
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                              data-testid="payment-cod"
+                              onClick={() => setValue("paymentMethod", "cod")}
+                              className={`rounded-xl border-2 p-4 text-left transition-all ${
+                                watch("paymentMethod") === "cod"
+                                  ? "border-primary bg-primary/5 shadow-lg"
+                                  : "border-gray-200 hover:border-primary/40"
+                              }`}
+                            >
+                              <div className="flex items-start justify-between">
+                                <div>
+                                  <p className="font-medium">Cash on Delivery</p>
+                                  <p className="mt-1 text-xs text-muted-foreground">
+                                    Pay when you receive
+                                  </p>
+                                </div>
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-5 w-5 text-muted-foreground"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                >
+                                  <rect x="2" y="5" width="20" height="14" rx="2" />
+                                  <line x1="2" y1="10" x2="22" y2="10" />
+                                </svg>
+                              </div>
+                            </motion.button>
                           ) : (
-                            <div className="flex h-full items-center justify-center">
-                              <ShoppingBag className="h-6 w-6 text-muted-foreground" />
+                            <div className="rounded-xl border-2 border-dashed p-4 bg-muted/30">
+                              <div className="flex items-start justify-between opacity-50">
+                                <div>
+                                  <p className="font-medium">Cash on Delivery</p>
+                                  <p className="mt-1 text-xs text-muted-foreground">
+                                    {deliveryMethod === "school"
+                                      ? "Not available for school collection"
+                                      : "Only for Warrenton & Jan Kempdorp"}
+                                  </p>
+                                </div>
+                              </div>
                             </div>
                           )}
                         </div>
-                        <div className="flex flex-1 justify-between">
-                          <div>
-                            <p className="font-medium">{item.name}</p>
-                            <p className="text-sm text-muted-foreground">
-                              Qty: {item.quantity}
-                            </p>
-                          </div>
-                          <p className="font-medium">
-                            {formatPrice(item.price * item.quantity)}
-                          </p>
+                      </div>
+
+                      <Separator />
+
+                      {/* Delivery Summary */}
+                      <div className="space-y-3">
+                        <h3 className="font-medium">
+                          {deliveryMethod === "school" ? "Collection Details" : "Delivery To"}
+                        </h3>
+                        <div className={`rounded-xl p-4 ${
+                          deliveryMethod === "school"
+                            ? "bg-accent/10 border border-accent/20"
+                            : "bg-muted"
+                        }`}>
+                          {deliveryMethod === "school" ? (
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <School className="h-4 w-4 text-accent" />
+                                <span className="font-medium">{selectedSchool?.name}</span>
+                              </div>
+                              <p className="text-sm text-muted-foreground">
+                                Collector: {watch("collectorName")} ({watch("collectorPhone")})
+                              </p>
+                              {watch("childName") && (
+                                <p className="text-sm text-muted-foreground">
+                                  Child: {watch("childName")} - {watch("childGrade")}
+                                </p>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="space-y-1">
+                              <p className="font-medium">{watch("recipientName")}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {watch("streetAddress")}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                {watch("town")}, {watch("province")}
+                              </p>
+                            </div>
+                          )}
                         </div>
+                        {estimatedDelivery && (
+                          <p className="text-sm text-primary font-medium">
+                            Estimated delivery: {estimatedDelivery}
+                          </p>
+                        )}
+                      </div>
+
+                      <Separator />
+
+                      {/* Order Items */}
+                      <div className="space-y-4">
+                        <h3 className="font-medium">Order Items</h3>
+                        <div className="space-y-3">
+                          {items.map((item) => (
+                            <div key={item.id} className="flex gap-4">
+                              <div className="relative h-16 w-16 overflow-hidden rounded-xl bg-muted">
+                                {item.image ? (
+                                  <Image
+                                    src={item.image}
+                                    alt={item.name}
+                                    fill
+                                    className="object-cover"
+                                  />
+                                ) : (
+                                  <div className="flex h-full items-center justify-center">
+                                    <ShoppingBag className="h-6 w-6 text-muted-foreground" />
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex flex-1 justify-between">
+                                <div>
+                                  <p className="font-medium">{item.name}</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    Qty: {item.quantity}
+                                  </p>
+                                </div>
+                                <p className="font-medium">
+                                  {formatPrice(item.price * item.quantity)}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <Separator />
+
+                      {/* Terms */}
+                      <div className="flex items-start space-x-2">
+                        <Checkbox id="terms" required />
+                        <Label htmlFor="terms" className="text-sm">
+                          I agree to the{" "}
+                          <Link href="/terms" className="text-primary hover:underline">
+                            Terms & Conditions
+                          </Link>{" "}
+                          and{" "}
+                          <Link href="/privacy" className="text-primary hover:underline">
+                            Privacy Policy
+                          </Link>
+                        </Label>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Navigation */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="mt-6 flex justify-between"
+            >
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setCurrentStep(currentStep - 1)}
+                disabled={currentStep === 0}
+                className="gap-2"
+              >
+                Back
+              </Button>
+              <Button
+                type="submit"
+                disabled={isProcessing}
+                className="gap-2 min-w-[140px]"
+              >
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : currentStep === 2 ? (
+                  <>
+                    <Check className="h-4 w-4" />
+                    Place Order
+                  </>
+                ) : (
+                  <>
+                    Continue
+                    <ChevronRight className="h-4 w-4" />
+                  </>
+                )}
+              </Button>
+            </motion.div>
+          </div>
+
+          {/* Order Summary Sidebar */}
+          <div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <Card className="sticky top-24 overflow-hidden">
+                <CardHeader className="bg-gradient-to-r from-primary/5 to-accent/5">
+                  <CardTitle className="flex items-center gap-2">
+                    <ShoppingBag className="h-5 w-5 text-primary" />
+                    Order Summary
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 space-y-4">
+                  <div className="max-h-64 space-y-3 overflow-y-auto">
+                    {items.map((item) => (
+                      <div key={item.id} className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">
+                          {item.quantity}× {item.name}
+                        </span>
+                        <span className="font-medium">{formatPrice(item.price * item.quantity)}</span>
                       </div>
                     ))}
                   </div>
 
                   <Separator />
 
-                  {/* Delivery Info */}
-                  <div className="space-y-2">
-                    <h3 className="font-medium">Delivery To</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {watch("recipientName")}
-                      <br />
-                      {watch("streetAddress")}
-                      <br />
-                      {watch("town")}, {watch("province")} {watch("postalCode")}
-                    </p>
-                    {estimatedDelivery && (
-                      <p className="text-sm text-primary font-medium">
-                        Estimated delivery: {estimatedDelivery}
-                      </p>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Subtotal</span>
+                      <span>{formatPrice(subtotal())}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Delivery</span>
+                      <span>
+                        {deliveryFee === 0 ? (
+                          <span className="text-green-600 font-medium">Free</span>
+                        ) : (
+                          formatPrice(deliveryFee)
+                        )}
+                      </span>
+                    </div>
+                    {deliveryMethod === "school" && (
+                      <div className="flex items-center gap-1 text-xs text-accent">
+                        <Sparkles className="h-3 w-3" />
+                        School collection - free delivery!
+                      </div>
                     )}
                   </div>
 
                   <Separator />
 
-                  {/* Terms */}
-                  <div className="flex items-start space-x-2">
-                    <Checkbox id="terms" required />
-                    <Label htmlFor="terms" className="text-sm">
-                      I agree to the{" "}
-                      <Link href="/terms" className="text-primary hover:underline">
-                        Terms & Conditions
-                      </Link>{" "}
-                      and{" "}
-                      <Link href="/privacy" className="text-primary hover:underline">
-                        Privacy Policy
-                      </Link>
-                    </Label>
+                  <div className="flex justify-between text-lg font-bold">
+                    <span>Total</span>
+                    <span className="text-primary">{formatPrice(total)}</span>
+                  </div>
+
+                  {giftMessage && (
+                    <div className="rounded-xl bg-pink-50 border border-pink-200 p-3">
+                      <div className="flex items-center gap-2 text-xs font-medium text-pink-700">
+                        <Gift className="h-3 w-3" />
+                        Gift Message
+                      </div>
+                      <p className="mt-1 text-sm text-pink-600">
+                        {giftMessage}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Delivery method indicator */}
+                  <div className={`rounded-xl p-3 ${
+                    deliveryMethod === "school"
+                      ? "bg-accent/10 border border-accent/20"
+                      : "bg-muted"
+                  }`}>
+                    <div className="flex items-center gap-2 text-sm">
+                      {deliveryMethod === "school" ? (
+                        <>
+                          <School className="h-4 w-4 text-accent" />
+                          <span className="font-medium">School Collection</span>
+                        </>
+                      ) : (
+                        <>
+                          <Truck className="h-4 w-4 text-primary" />
+                          <span className="font-medium">Home Delivery</span>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
-            )}
-
-            {/* Navigation */}
-            <div className="mt-6 flex justify-between">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setCurrentStep(currentStep - 1)}
-                disabled={currentStep === 0}
-              >
-                Back
-              </Button>
-              <Button type="submit" disabled={isProcessing}>
-                {isProcessing ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing...
-                  </>
-                ) : currentStep === 2 ? (
-                  "Place Order"
-                ) : (
-                  "Continue"
-                )}
-              </Button>
-            </div>
-          </div>
-
-          {/* Order Summary Sidebar */}
-          <div>
-            <Card className="sticky top-24">
-              <CardHeader>
-                <CardTitle>Order Summary</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="max-h-64 space-y-3 overflow-y-auto">
-                  {items.map((item) => (
-                    <div key={item.id} className="flex justify-between text-sm">
-                      <span>
-                        {item.quantity}× {item.name}
-                      </span>
-                      <span>{formatPrice(item.price * item.quantity)}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <Separator />
-
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Subtotal</span>
-                    <span>{formatPrice(subtotal())}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Delivery</span>
-                    <span>
-                      {deliveryFee === 0 ? (
-                        <span className="text-success">Free</span>
-                      ) : (
-                        formatPrice(deliveryFee)
-                      )}
-                    </span>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div className="flex justify-between text-lg font-semibold">
-                  <span>Total</span>
-                  <span>{formatPrice(total)}</span>
-                </div>
-
-                {giftMessage && (
-                  <div className="rounded-lg bg-muted p-3">
-                    <p className="text-xs font-medium">Gift Message:</p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {giftMessage}
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            </motion.div>
           </div>
         </div>
       </form>

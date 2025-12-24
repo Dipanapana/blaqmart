@@ -4,8 +4,9 @@ import { db } from "@/lib/db"
 import { generateOrderNumber } from "@/lib/utils"
 import { z } from "zod"
 import logger from "@/lib/logger"
-import { handleApiError, ApiError } from "@/lib/api-error"
+import { handleApiError } from "@/lib/api-error"
 
+// Updated schema to support both home delivery and school collection
 const orderSchema = z.object({
   items: z.array(
     z.object({
@@ -13,6 +14,17 @@ const orderSchema = z.object({
       quantity: z.number().min(1),
     })
   ),
+  // Delivery method
+  deliveryMethod: z.enum(["home", "school"]).default("home"),
+
+  // School collection fields
+  schoolId: z.string().optional(),
+  collectorName: z.string().optional(),
+  collectorPhone: z.string().optional(),
+  childName: z.string().optional(),
+  childGrade: z.string().optional(),
+
+  // Home delivery address (optional for school collection)
   shippingAddress: z.object({
     recipientName: z.string(),
     phone: z.string(),
@@ -21,14 +33,36 @@ const orderSchema = z.object({
     city: z.string(),
     postalCode: z.string(),
     province: z.string(),
-  }),
-  deliveryDate: z.string(),
-  deliverySlot: z.string(),
+  }).optional(),
+
+  // Delivery options (optional for school collection)
+  deliveryDate: z.string().optional(),
+  deliverySlot: z.string().optional(),
   deliveryNotes: z.string().optional(),
   giftMessage: z.string().optional(),
+
+  // Guest checkout
   guestEmail: z.string().email().optional(),
   guestPhone: z.string().optional(),
-  paymentMethod: z.enum(["payfast", "cod"]).default("payfast"),
+
+  // Payment
+  paymentMethod: z.enum(["payfast", "yoco", "cod"]).default("yoco"),
+}).superRefine((data, ctx) => {
+  if (data.deliveryMethod === "school") {
+    if (!data.schoolId) {
+      ctx.addIssue({ code: "custom", message: "School is required for school collection", path: ["schoolId"] })
+    }
+    if (!data.collectorName) {
+      ctx.addIssue({ code: "custom", message: "Collector name is required", path: ["collectorName"] })
+    }
+    if (!data.collectorPhone) {
+      ctx.addIssue({ code: "custom", message: "Collector phone is required", path: ["collectorPhone"] })
+    }
+  } else {
+    if (!data.shippingAddress) {
+      ctx.addIssue({ code: "custom", message: "Shipping address is required for home delivery", path: ["shippingAddress"] })
+    }
+  }
 })
 
 export async function POST(request: NextRequest) {
@@ -36,6 +70,22 @@ export async function POST(request: NextRequest) {
     const session = await auth()
     const body = await request.json()
     const data = orderSchema.parse(body)
+
+    const isSchoolCollection = data.deliveryMethod === "school"
+
+    // Validate school exists for school collection
+    let school = null
+    if (isSchoolCollection && data.schoolId) {
+      school = await db.school.findUnique({
+        where: { id: data.schoolId, isActive: true, isPartner: true },
+      })
+      if (!school) {
+        return NextResponse.json(
+          { error: "Selected school is not available for collection" },
+          { status: 400 }
+        )
+      }
+    }
 
     // Get products and calculate totals
     const productIds = data.items.map((item) => item.productId)
@@ -79,8 +129,8 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // Calculate delivery fee
-    const deliveryFee = subtotal >= 500 ? 0 : 50
+    // Calculate delivery fee (free for school collection or orders >= R500)
+    const deliveryFee = isSchoolCollection ? 0 : (subtotal >= 500 ? 0 : 50)
     const total = subtotal + deliveryFee
 
     // Get default supplier
@@ -95,6 +145,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Determine delivery type
+    const deliveryType = isSchoolCollection
+      ? "SCHOOL_COLLECTION"
+      : "LOCAL_OWN_VEHICLE" // Default, could be enhanced based on town
+
+    // Determine payment provider
+    let paymentProvider: "PAYFAST" | "YOCO_CARD" | "YOCO_EFT" | "COD" = "YOCO_CARD"
+    if (data.paymentMethod === "payfast") {
+      paymentProvider = "PAYFAST"
+    } else if (data.paymentMethod === "cod") {
+      paymentProvider = "COD"
+    }
+
     // Create order
     const order = await db.order.create({
       data: {
@@ -103,34 +166,66 @@ export async function POST(request: NextRequest) {
         supplierId: supplier.id,
         guestEmail: data.guestEmail,
         guestPhone: data.guestPhone,
-        shippingName: data.shippingAddress.recipientName,
-        shippingPhone: data.shippingAddress.phone,
-        shippingAddress: data.shippingAddress.streetAddress,
-        shippingSuburb: data.shippingAddress.suburb,
-        shippingCity: data.shippingAddress.city,
-        shippingPostalCode: data.shippingAddress.postalCode,
-        shippingProvince: data.shippingAddress.province,
+
+        // Delivery type and school collection
+        deliveryType,
+        schoolId: isSchoolCollection ? data.schoolId : null,
+        collectorName: isSchoolCollection ? data.collectorName : null,
+        collectorPhone: isSchoolCollection ? data.collectorPhone : null,
+        childName: isSchoolCollection ? data.childName : null,
+        childGrade: isSchoolCollection ? data.childGrade : null,
+
+        // Shipping address (use school info for school collection)
+        shippingName: isSchoolCollection
+          ? (data.collectorName || "School Collection")
+          : (data.shippingAddress?.recipientName || ""),
+        shippingPhone: isSchoolCollection
+          ? (data.collectorPhone || "")
+          : (data.shippingAddress?.phone || ""),
+        shippingAddress: isSchoolCollection
+          ? `Collect at ${school?.name || "school"}`
+          : (data.shippingAddress?.streetAddress || ""),
+        shippingSuburb: isSchoolCollection
+          ? (school?.town || "")
+          : (data.shippingAddress?.suburb || ""),
+        shippingCity: isSchoolCollection
+          ? (school?.town || "")
+          : (data.shippingAddress?.city || ""),
+        shippingPostalCode: isSchoolCollection
+          ? "0000"
+          : (data.shippingAddress?.postalCode || ""),
+        shippingProvince: isSchoolCollection
+          ? "Northern Cape"
+          : (data.shippingAddress?.province || "Northern Cape"),
+
+        // Pricing
         subtotal,
         deliveryFee,
         total,
-        deliveryDate: new Date(data.deliveryDate),
-        deliverySlot: data.deliverySlot,
+
+        // Delivery options
+        deliveryDate: data.deliveryDate ? new Date(data.deliveryDate) : null,
+        deliverySlot: data.deliverySlot || null,
         deliveryNotes: data.deliveryNotes,
         giftMessage: data.giftMessage,
+
         status: "PENDING",
         paymentStatus: "PENDING",
+
         items: {
           create: orderItems,
         },
         statusHistory: {
           create: {
             status: "PENDING",
-            note: "Order created",
+            note: isSchoolCollection
+              ? `Order created for school collection at ${school?.name}`
+              : "Order created",
           },
         },
         payment: {
           create: {
-            provider: (data.paymentMethod?.toUpperCase() || "PAYFAST") as "PAYFAST" | "YOCO_CARD" | "YOCO_EFT" | "COD",
+            provider: paymentProvider,
             amount: total,
             status: "PENDING",
           },
@@ -139,6 +234,7 @@ export async function POST(request: NextRequest) {
       include: {
         items: true,
         payment: true,
+        school: true,
       },
     })
 
@@ -150,7 +246,11 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    logger.order("Order created", order.id, { orderNumber: order.orderNumber })
+    logger.order("Order created", order.id, {
+      orderNumber: order.orderNumber,
+      deliveryType,
+      schoolId: order.schoolId,
+    })
 
     return NextResponse.json({
       success: true,
@@ -158,6 +258,8 @@ export async function POST(request: NextRequest) {
         id: order.id,
         orderNumber: order.orderNumber,
         total: Number(order.total),
+        deliveryType,
+        schoolName: school?.name,
       },
     })
   } catch (error) {
@@ -186,6 +288,7 @@ export async function GET(request: NextRequest) {
         items: {
           include: { product: true },
         },
+        school: true,
       },
       orderBy: { createdAt: "desc" },
     })

@@ -41,8 +41,9 @@ enum PaymentProvider {
 }
 
 enum DeliveryType {
-  LOCAL_OWN_VEHICLE // Warrenton, Jan Kempdorp - COD available
-  COURIER           // Hartswater, Christiana, others
+  LOCAL_OWN_VEHICLE  // Warrenton, Jan Kempdorp - COD available
+  COURIER            // Hartswater, Christiana, others
+  SCHOOL_COLLECTION  // Collect at partner school - free
 }
 
 // ============== USERS ==============
@@ -162,6 +163,7 @@ model School {
   name         String
   slug         String  @unique
   town         String // Warrenton, Jan Kempdorp, etc.
+  address      String? // Physical address for collection
   contactEmail String?
   contactPhone String?
   logo         String?
@@ -169,6 +171,7 @@ model School {
   isPartner    Boolean @default(false)
 
   stationeryPacks StationeryPack[]
+  orders          Order[]
 
   createdAt DateTime @default(now())
 
@@ -399,8 +402,17 @@ model Order {
   supplier   Supplier @relation(fields: [supplierId], references: [id])
 
   // Delivery
-  addressId String?
-  address   Address? @relation(fields: [addressId], references: [id])
+  addressId    String?
+  address      Address?     @relation(fields: [addressId], references: [id])
+  deliveryType DeliveryType @default(LOCAL_OWN_VEHICLE)
+
+  // School Collection
+  schoolId       String?
+  school         School?  @relation(fields: [schoolId], references: [id])
+  collectorName  String?  // Who will collect (parent or child)
+  collectorPhone String?  // Phone for collection notification
+  childName      String?  // Child's name (for school reference)
+  childGrade     String?  // Child's grade (for school reference)
 
   // Snapshot address (in case address is deleted/changed)
   shippingName       String
@@ -441,6 +453,7 @@ model Order {
 
   @@index([customerId])
   @@index([supplierId])
+  @@index([schoolId])
   @@index([status])
   @@index([orderNumber])
   @@index([createdAt])

@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, Package, Truck, MapPin, Phone, Mail, User } from "lucide-react"
+import { ArrowLeft, Package, Truck, MapPin, Phone, Mail, User, School, GraduationCap, Sparkles } from "lucide-react"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { formatPrice, formatDate } from "@/lib/utils"
@@ -51,6 +51,7 @@ async function getOrder(id: string) {
           phone: true,
         },
       },
+      school: true,
     },
   })
 }
@@ -293,6 +294,67 @@ export default async function AdminOrderDetailPage({
             </CardContent>
           </Card>
 
+          {/* School Collection - Only show for school collection orders */}
+          {order.deliveryType === "SCHOOL_COLLECTION" && order.school && (
+            <Card className="border-accent/30 bg-gradient-to-br from-accent/5 to-accent/10">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-accent">
+                  <School className="h-5 w-5" />
+                  School Collection
+                  <Badge variant="outline" className="ml-auto border-accent/50 text-accent">
+                    <Sparkles className="mr-1 h-3 w-3" />
+                    New
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* School Info */}
+                <div className="rounded-lg bg-white/50 p-3">
+                  <p className="font-medium text-sm text-muted-foreground">Collection Point</p>
+                  <p className="font-semibold text-lg">{order.school.name}</p>
+                  <p className="text-sm text-muted-foreground">{order.school.town}</p>
+                </div>
+
+                {/* Collector Info */}
+                <div className="space-y-2">
+                  <p className="font-medium text-sm text-muted-foreground">Collector</p>
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-accent" />
+                    <span className="font-medium">{order.collectorName}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-accent" />
+                    <a
+                      href={`tel:${order.collectorPhone}`}
+                      className="text-primary hover:underline"
+                    >
+                      {order.collectorPhone}
+                    </a>
+                  </div>
+                </div>
+
+                {/* Child Info (if provided) */}
+                {(order.childName || order.childGrade) && (
+                  <div className="space-y-2 pt-2 border-t">
+                    <p className="font-medium text-sm text-muted-foreground">Child Details</p>
+                    {order.childName && (
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-muted-foreground" />
+                        <span>{order.childName}</span>
+                      </div>
+                    )}
+                    {order.childGrade && (
+                      <div className="flex items-center gap-2">
+                        <GraduationCap className="h-4 w-4 text-muted-foreground" />
+                        <span>{order.childGrade}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Shipping Address */}
           <Card>
             <CardHeader>
@@ -328,23 +390,40 @@ export default async function AdminOrderDetailPage({
               <CardTitle className="flex items-center gap-2">
                 <Truck className="h-5 w-5" />
                 Delivery
+                {order.deliveryType && (
+                  <Badge variant="outline" className="ml-auto text-xs">
+                    {order.deliveryType === "SCHOOL_COLLECTION"
+                      ? "School Collection"
+                      : order.deliveryType === "LOCAL_OWN_VEHICLE"
+                      ? "Local Delivery"
+                      : "Courier"}
+                  </Badge>
+                )}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2 text-sm">
-                {order.deliveryDate && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Date</span>
-                    <span className="font-medium">
-                      {formatDate(order.deliveryDate)}
-                    </span>
-                  </div>
-                )}
-                {order.deliverySlot && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Time Slot</span>
-                    <span className="font-medium">{order.deliverySlot}</span>
-                  </div>
+                {order.deliveryType === "SCHOOL_COLLECTION" ? (
+                  <p className="text-accent font-medium">
+                    Estimated: 1-2 school days
+                  </p>
+                ) : (
+                  <>
+                    {order.deliveryDate && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Date</span>
+                        <span className="font-medium">
+                          {formatDate(order.deliveryDate)}
+                        </span>
+                      </div>
+                    )}
+                    {order.deliverySlot && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Time Slot</span>
+                        <span className="font-medium">{order.deliverySlot}</span>
+                      </div>
+                    )}
+                  </>
                 )}
                 {order.deliveryNotes && (
                   <div className="pt-2">
