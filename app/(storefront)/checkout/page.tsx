@@ -90,6 +90,9 @@ const checkoutSchema = z.object({
 
   // Payment
   paymentMethod: z.enum(["payfast", "yoco", "cod"]),
+
+  // Terms acceptance (required on final step)
+  termsAccepted: z.boolean().optional(),
 }).superRefine((data, ctx) => {
   if (data.deliveryMethod === "school") {
     if (!data.schoolId) {
@@ -286,7 +289,7 @@ export default function CheckoutPage() {
       }
       return ["recipientName", "streetAddress", "town", "deliveryDate", "deliverySlot"]
     }
-    return ["paymentMethod"]
+    return ["paymentMethod", "termsAccepted"]
   }
 
   // Handle continue button with step-specific validation
@@ -299,7 +302,14 @@ export default function CheckoutPage() {
     if (currentStep < 2) {
       setCurrentStep(currentStep + 1)
     } else {
-      // Final step - submit the form
+      // Final step - check terms acceptance and submit
+      const termsAccepted = watch("termsAccepted")
+      if (!termsAccepted) {
+        // Trigger error for terms
+        setValue("termsAccepted", false, { shouldValidate: true })
+        return
+      }
+      // Submit the form
       handleSubmit(onSubmit)()
     }
   }
@@ -1289,18 +1299,30 @@ export default function CheckoutPage() {
                       <Separator />
 
                       {/* Terms */}
-                      <div className="flex items-start space-x-2">
-                        <Checkbox id="terms" required />
-                        <Label htmlFor="terms" className="text-sm">
-                          I agree to the{" "}
-                          <Link href="/terms" className="text-primary hover:underline">
-                            Terms & Conditions
-                          </Link>{" "}
-                          and{" "}
-                          <Link href="/privacy" className="text-primary hover:underline">
-                            Privacy Policy
-                          </Link>
-                        </Label>
+                      <div className="flex items-start space-x-3">
+                        <Checkbox
+                          id="terms"
+                          checked={watch("termsAccepted") || false}
+                          onCheckedChange={(checked) => setValue("termsAccepted", checked === true)}
+                          className="mt-0.5"
+                        />
+                        <div className="space-y-1">
+                          <Label htmlFor="terms" className="text-sm leading-relaxed cursor-pointer">
+                            I agree to the{" "}
+                            <Link href="/terms" className="text-primary hover:underline">
+                              Terms & Conditions
+                            </Link>{" "}
+                            and{" "}
+                            <Link href="/privacy" className="text-primary hover:underline">
+                              Privacy Policy
+                            </Link>
+                          </Label>
+                          {errors.termsAccepted && (
+                            <p className="text-sm text-destructive">
+                              Please accept the terms to continue
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
