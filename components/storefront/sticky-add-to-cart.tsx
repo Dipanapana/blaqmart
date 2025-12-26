@@ -5,13 +5,14 @@ import { ShoppingCart, Minus, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
+import { useCart } from '@/hooks/use-cart'
 
 interface StickyAddToCartProps {
     product: {
         id: string
         name: string
         price: number
-        image: string
+        images?: string[]
         stock: number
     }
 }
@@ -19,15 +20,24 @@ interface StickyAddToCartProps {
 export function StickyAddToCart({ product }: StickyAddToCartProps) {
     const [quantity, setQuantity] = useState(1)
     const [isAdding, setIsAdding] = useState(false)
+    const { addItem } = useCart()
 
     const handleAddToCart = async () => {
         setIsAdding(true)
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 800))
 
-        // In a real app, this would call a cart context or API
+        // Add to cart with quantity
+        for (let i = 0; i < quantity; i++) {
+            addItem({
+                productId: product.id,
+                name: product.name,
+                price: product.price,
+                image: product.images?.[0] || '',
+                stock: product.stock,
+            })
+        }
+
         toast.success(`Added ${quantity} x ${product.name} to cart`)
-
+        setQuantity(1) // Reset quantity
         setIsAdding(false)
     }
 

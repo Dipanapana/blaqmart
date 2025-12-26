@@ -3,11 +3,13 @@
 import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Plus } from 'lucide-react'
+import { Plus, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useInView } from 'framer-motion'
+import { useCart } from '@/hooks/use-cart'
+import { toast } from 'sonner'
 
 interface Product {
   id: string
@@ -27,8 +29,35 @@ interface ProductGridProps {
 export function ProductGrid({ initialProducts }: ProductGridProps) {
   const [products, setProducts] = useState<Product[]>(initialProducts)
   const [loading, setLoading] = useState(false)
+  const [addedProducts, setAddedProducts] = useState<Set<string>>(new Set())
   const loadMoreRef = useRef(null)
   const isInView = useInView(loadMoreRef)
+  const { addItem } = useCart()
+
+  const handleAddToCart = (product: Product, e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    addItem({
+      productId: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.images?.[0] || '',
+      stock: product.stock,
+    })
+
+    // Show added state briefly
+    setAddedProducts(prev => new Set(prev).add(product.id))
+    setTimeout(() => {
+      setAddedProducts(prev => {
+        const next = new Set(prev)
+        next.delete(product.id)
+        return next
+      })
+    }, 1500)
+
+    toast.success(`Added ${product.name} to cart`)
+  }
 
   // Simulated infinite scroll
   useEffect(() => {
@@ -89,8 +118,21 @@ export function ProductGrid({ initialProducts }: ProductGridProps) {
                       <span className="text-[10px] text-gray-400 line-through">R{product.comparePrice}</span>
                     )}
                   </div>
-                  <Button size="icon" className="h-8 w-8 rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-white shadow-sm transition-colors">
-                    <Plus className="h-4 w-4" />
+                  <Button
+                    size="icon"
+                    className={`h-8 w-8 rounded-full shadow-sm transition-colors ${
+                      addedProducts.has(product.id)
+                        ? 'bg-green-500 text-white'
+                        : 'bg-primary/10 text-primary hover:bg-primary hover:text-white'
+                    }`}
+                    onClick={(e) => handleAddToCart(product, e)}
+                    disabled={product.stock <= 0}
+                  >
+                    {addedProducts.has(product.id) ? (
+                      <Check className="h-4 w-4" />
+                    ) : (
+                      <Plus className="h-4 w-4" />
+                    )}
                   </Button>
                 </div>
               </CardContent>
