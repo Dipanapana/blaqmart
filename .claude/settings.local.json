@@ -36,7 +36,11 @@
       "Bash(set \"DATABASE_URL=postgresql://postgres:rTyZJHSasGOHstbhPIUWpFxCWLNIMcNI@gondola.proxy.rlwy.net:41684/railway\")",
       "Bash($env:DATABASE_URL=\"postgresql://postgres:rTyZJHSasGOHstbhPIUWpFxCWLNIMcNI@gondola.proxy.rlwy.net:41684/railway\")",
       "Bash(set \"PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION=YES\")",
-      "Bash(powershell -Command \"$env:DATABASE_URL=''postgresql://postgres:rTyZJHSasGOHstbhPIUWpFxCWLNIMcNI@gondola.proxy.rlwy.net:41684/railway''; npx prisma db seed\")"
+      "Bash(powershell -Command \"$env:DATABASE_URL=''postgresql://postgres:rTyZJHSasGOHstbhPIUWpFxCWLNIMcNI@gondola.proxy.rlwy.net:41684/railway''; npx prisma db seed\")",
+      "Bash(ls:*)",
+      "Bash(netstat:*)",
+      "Bash(python:*)",
+      "Bash(powershell -Command:*)"
     ],
     "deny": [],
     "ask": []

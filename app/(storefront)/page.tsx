@@ -1,5 +1,5 @@
 import { db } from "@/lib/db"
-import { AnimatedHomepage } from "@/components/storefront/animated-homepage"
+import { MobileHomepageWrapper } from "@/components/storefront/mobile-homepage-wrapper"
 
 export const dynamic = 'force-dynamic'
 
@@ -84,11 +84,10 @@ export default async function HomePage() {
   }))
 
   return (
-    <AnimatedHomepage
+    <MobileHomepageWrapper
       grades={grades}
-      categories={categories}
-      featuredProducts={transformedProducts}
-      stationeryPacks={transformedPacks}
+      transformedPacks={transformedPacks}
+      transformedProducts={transformedProducts}
     />
   )
 }

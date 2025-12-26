@@ -76,7 +76,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       {/* Products */}
       {category.products.length > 0 ? (
         <ProductGrid
-          products={category.products.map((p) => ({
+          initialProducts={category.products.map((p) => ({
             ...p,
             price: Number(p.price),
             comparePrice: p.comparePrice ? Number(p.comparePrice) : null,

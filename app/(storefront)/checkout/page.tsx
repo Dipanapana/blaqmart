@@ -44,6 +44,7 @@ import { formatPrice } from "@/lib/utils"
 import { EmptyState } from "@/components/shared/empty-state"
 import { LocationDetector } from "@/components/checkout/location-detector"
 import { fadeInUp, staggerContainer, springConfig } from "@/lib/animations"
+import { StickyCheckoutSummary } from "@/components/checkout/sticky-checkout-summary"
 
 // School type for API response
 interface SchoolData {
@@ -352,9 +353,20 @@ export default function CheckoutPage() {
         throw new Error(result.error || "Failed to create order")
       }
 
-      // Clear cart and redirect to payment/success
+      // Clear cart
       clearCart()
-      router.push(`/orders/${result.data.id}/success`)
+
+      // Redirect to Yoco payment page if available, otherwise go to success
+      if (result.data.paymentRedirectUrl) {
+        // Redirect to Yoco hosted checkout
+        window.location.href = result.data.paymentRedirectUrl
+      } else if (result.data.paymentMethod === "cod") {
+        // COD orders go directly to success
+        router.push(`/orders/${result.data.id}/success`)
+      } else {
+        // Fallback to success page
+        router.push(`/orders/${result.data.id}/success`)
+      }
     } catch (error) {
       console.error("Checkout error:", error)
       alert("Something went wrong. Please try again.")
@@ -401,11 +413,10 @@ export default function CheckoutPage() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => index < currentStep && setCurrentStep(step.id)}
-                className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all duration-300 ${
-                  currentStep >= step.id
+                className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all duration-300 ${currentStep >= step.id
                     ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
                     : "bg-muted text-muted-foreground"
-                }`}
+                  }`}
               >
                 {currentStep > step.id ? (
                   <motion.div
@@ -458,18 +469,16 @@ export default function CheckoutPage() {
                           whileHover={{ scale: 1.02, y: -4 }}
                           whileTap={{ scale: 0.98 }}
                           onClick={() => setValue("deliveryMethod", "home")}
-                          className={`relative rounded-2xl border-2 p-6 text-left transition-all duration-300 ${
-                            deliveryMethod === "home"
+                          className={`relative rounded-2xl border-2 p-6 text-left transition-all duration-300 ${deliveryMethod === "home"
                               ? "border-primary bg-gradient-to-br from-primary/5 to-primary/10 shadow-lg shadow-primary/10"
                               : "border-gray-200 hover:border-primary/40 hover:bg-gray-50"
-                          }`}
+                            }`}
                         >
                           <div className="flex items-start gap-4">
-                            <div className={`rounded-xl p-3 ${
-                              deliveryMethod === "home"
+                            <div className={`rounded-xl p-3 ${deliveryMethod === "home"
                                 ? "bg-primary text-white"
                                 : "bg-gray-100 text-gray-500"
-                            }`}>
+                              }`}>
                               <Home className="h-6 w-6" />
                             </div>
                             <div className="flex-1">
@@ -504,18 +513,16 @@ export default function CheckoutPage() {
                           whileHover={{ scale: 1.02, y: -4 }}
                           whileTap={{ scale: 0.98 }}
                           onClick={() => setValue("deliveryMethod", "school")}
-                          className={`relative rounded-2xl border-2 p-6 text-left transition-all duration-300 ${
-                            deliveryMethod === "school"
+                          className={`relative rounded-2xl border-2 p-6 text-left transition-all duration-300 ${deliveryMethod === "school"
                               ? "border-accent bg-gradient-to-br from-accent/5 to-accent/10 shadow-lg shadow-accent/10"
                               : "border-gray-200 hover:border-accent/40 hover:bg-gray-50"
-                          }`}
+                            }`}
                         >
                           <div className="flex items-start gap-4">
-                            <div className={`rounded-xl p-3 ${
-                              deliveryMethod === "school"
+                            <div className={`rounded-xl p-3 ${deliveryMethod === "school"
                                 ? "bg-accent text-white"
                                 : "bg-gray-100 text-gray-500"
-                            }`}>
+                              }`}>
                               <School className="h-6 w-6" />
                             </div>
                             <div className="flex-1">
@@ -920,16 +927,14 @@ export default function CheckoutPage() {
                             <motion.div
                               initial={{ opacity: 0, y: 10 }}
                               animate={{ opacity: 1, y: 0 }}
-                              className={`rounded-xl p-4 ${
-                                selectedTownData.type === 'local'
+                              className={`rounded-xl p-4 ${selectedTownData.type === 'local'
                                   ? 'bg-green-50 border border-green-200'
                                   : 'bg-blue-50 border border-blue-200'
-                              }`}
+                                }`}
                             >
                               <div className="flex items-center gap-3">
-                                <Truck className={`h-5 w-5 ${
-                                  selectedTownData.type === 'local' ? 'text-green-600' : 'text-blue-600'
-                                }`} />
+                                <Truck className={`h-5 w-5 ${selectedTownData.type === 'local' ? 'text-green-600' : 'text-blue-600'
+                                  }`} />
                                 <div>
                                   <p className="font-medium">
                                     {selectedTownData.type === 'local' ? 'Local Delivery' : 'Courier Delivery'}
@@ -991,11 +996,10 @@ export default function CheckoutPage() {
                                   type="button"
                                   whileTap={{ scale: 0.95 }}
                                   onClick={() => setValue("deliveryDate", date.value)}
-                                  className={`snap-start flex-shrink-0 w-20 md:w-auto rounded-xl border-2 p-3 text-center transition-all active:scale-95 ${
-                                    watch("deliveryDate") === date.value
+                                  className={`snap-start flex-shrink-0 w-20 md:w-auto rounded-xl border-2 p-3 text-center transition-all active:scale-95 ${watch("deliveryDate") === date.value
                                       ? "border-primary bg-primary/10 shadow-md"
                                       : "border-gray-200 active:border-primary/40"
-                                  }`}
+                                    }`}
                                 >
                                   <p className="text-xs text-muted-foreground">
                                     {date.isToday ? "Today" : date.label.split(" ")[0]}
@@ -1025,11 +1029,10 @@ export default function CheckoutPage() {
                                   type="button"
                                   whileTap={{ scale: 0.95 }}
                                   onClick={() => setValue("deliverySlot", slot.id)}
-                                  className={`flex-shrink-0 whitespace-nowrap rounded-full sm:rounded-xl border-2 px-5 py-3 sm:p-4 text-sm sm:text-base font-medium transition-all active:scale-95 ${
-                                    watch("deliverySlot") === slot.id
+                                  className={`flex-shrink-0 whitespace-nowrap rounded-full sm:rounded-xl border-2 px-5 py-3 sm:p-4 text-sm sm:text-base font-medium transition-all active:scale-95 ${watch("deliverySlot") === slot.id
                                       ? "border-primary bg-primary text-primary-foreground shadow-md"
                                       : "border-gray-200 active:border-primary/40"
-                                  }`}
+                                    }`}
                                 >
                                   <span className="sm:hidden">{slot.label.split(" ")[0]}</span>
                                   <span className="hidden sm:inline">{slot.label}</span>
@@ -1106,11 +1109,10 @@ export default function CheckoutPage() {
                             whileTap={{ scale: 0.98 }}
                             data-testid="payment-yoco"
                             onClick={() => setValue("paymentMethod", "yoco")}
-                            className={`rounded-xl border-2 p-4 text-left transition-all ${
-                              watch("paymentMethod") === "yoco"
+                            className={`rounded-xl border-2 p-4 text-left transition-all ${watch("paymentMethod") === "yoco"
                                 ? "border-primary bg-primary/5 shadow-lg"
                                 : "border-gray-200 hover:border-primary/40"
-                            }`}
+                              }`}
                           >
                             <div className="flex items-start justify-between">
                               <div>
@@ -1135,11 +1137,10 @@ export default function CheckoutPage() {
                             whileTap={{ scale: 0.98 }}
                             data-testid="payment-payfast"
                             onClick={() => setValue("paymentMethod", "payfast")}
-                            className={`rounded-xl border-2 p-4 text-left transition-all ${
-                              watch("paymentMethod") === "payfast"
+                            className={`rounded-xl border-2 p-4 text-left transition-all ${watch("paymentMethod") === "payfast"
                                 ? "border-primary bg-primary/5 shadow-lg"
                                 : "border-gray-200 hover:border-primary/40"
-                            }`}
+                              }`}
                           >
                             <div className="flex items-start justify-between">
                               <div>
@@ -1160,11 +1161,10 @@ export default function CheckoutPage() {
                               whileTap={{ scale: 0.98 }}
                               data-testid="payment-cod"
                               onClick={() => setValue("paymentMethod", "cod")}
-                              className={`rounded-xl border-2 p-4 text-left transition-all ${
-                                watch("paymentMethod") === "cod"
+                              className={`rounded-xl border-2 p-4 text-left transition-all ${watch("paymentMethod") === "cod"
                                   ? "border-primary bg-primary/5 shadow-lg"
                                   : "border-gray-200 hover:border-primary/40"
-                              }`}
+                                }`}
                             >
                               <div className="flex items-start justify-between">
                                 <div>
@@ -1210,11 +1210,10 @@ export default function CheckoutPage() {
                         <h3 className="font-medium">
                           {deliveryMethod === "school" ? "Collection Details" : "Delivery To"}
                         </h3>
-                        <div className={`rounded-xl p-4 ${
-                          deliveryMethod === "school"
+                        <div className={`rounded-xl p-4 ${deliveryMethod === "school"
                             ? "bg-accent/10 border border-accent/20"
                             : "bg-muted"
-                        }`}>
+                          }`}>
                           {deliveryMethod === "school" ? (
                             <div className="space-y-2">
                               <div className="flex items-center gap-2">
@@ -1328,7 +1327,7 @@ export default function CheckoutPage() {
                 type="button"
                 onClick={handleContinue}
                 disabled={isProcessing}
-                className="gap-2 min-w-[140px]"
+                className="gap-2 min-w-[140px] hidden lg:flex"
               >
                 {isProcessing ? (
                   <>
@@ -1421,11 +1420,10 @@ export default function CheckoutPage() {
                   )}
 
                   {/* Delivery method indicator */}
-                  <div className={`rounded-xl p-3 ${
-                    deliveryMethod === "school"
+                  <div className={`rounded-xl p-3 ${deliveryMethod === "school"
                       ? "bg-accent/10 border border-accent/20"
                       : "bg-muted"
-                  }`}>
+                    }`}>
                     <div className="flex items-center gap-2 text-sm">
                       {deliveryMethod === "school" ? (
                         <>
@@ -1451,50 +1449,12 @@ export default function CheckoutPage() {
       </form>
 
       {/* Sticky Mobile Order Summary - Only visible on mobile/tablet */}
-      <motion.div
-        initial={{ y: 100 }}
-        animate={{ y: 0 }}
-        className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur-sm p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] lg:hidden"
-      >
-        <div className="container flex items-center justify-between gap-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">{items.length} item{items.length !== 1 ? 's' : ''}</span>
-            </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-xl font-bold text-primary">{formatPrice(total)}</span>
-              {deliveryFee === 0 && (
-                <span className="text-xs text-green-600 font-medium">Free delivery</span>
-              )}
-            </div>
-          </div>
-          <Button
-            type="button"
-            onClick={handleContinue}
-            disabled={isProcessing}
-            size="lg"
-            className="min-w-[140px] shadow-lg"
-          >
-            {isProcessing ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                Processing
-              </>
-            ) : currentStep === 2 ? (
-              <>
-                <Check className="h-4 w-4 mr-2" />
-                Place Order
-              </>
-            ) : (
-              <>
-                Continue
-                <ChevronRight className="h-4 w-4 ml-2" />
-              </>
-            )}
-          </Button>
-        </div>
-      </motion.div>
+      <StickyCheckoutSummary
+        total={total}
+        onContinue={handleContinue}
+        isProcessing={isProcessing}
+        step={currentStep}
+      />
     </div>
   )
 }

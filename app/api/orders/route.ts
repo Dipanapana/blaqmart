@@ -5,6 +5,7 @@ import { generateOrderNumber } from "@/lib/utils"
 import { z } from "zod"
 import logger from "@/lib/logger"
 import { handleApiError } from "@/lib/api-error"
+import { createYocoCheckout, randToCents, getYocoUrls } from "@/lib/yoco"
 
 // Updated schema to support both home delivery and school collection
 const orderSchema = z.object({
@@ -252,6 +253,47 @@ export async function POST(request: NextRequest) {
       schoolId: order.schoolId,
     })
 
+    // Handle payment redirect for Yoco
+    let paymentRedirectUrl: string | null = null
+
+    if (data.paymentMethod === "yoco") {
+      try {
+        const yocoUrls = getYocoUrls(order.id)
+        const yocoCheckout = await createYocoCheckout({
+          amount: randToCents(total),
+          currency: "ZAR",
+          successUrl: yocoUrls.successUrl,
+          cancelUrl: yocoUrls.cancelUrl,
+          failureUrl: yocoUrls.failureUrl,
+          metadata: {
+            orderId: order.id,
+            orderNumber: order.orderNumber,
+            customerEmail: data.guestEmail || session?.user?.email || "",
+            customerPhone: data.guestPhone || data.shippingAddress?.phone || data.collectorPhone || "",
+          },
+        })
+
+        // Update payment record with Yoco checkout ID
+        await db.payment.update({
+          where: { id: order.payment?.id },
+          data: {
+            yocoCheckoutId: yocoCheckout.id,
+          },
+        })
+
+        paymentRedirectUrl = yocoCheckout.redirectUrl
+
+        logger.payment("Yoco checkout created", "Yoco", {
+          orderId: order.id,
+          checkoutId: yocoCheckout.id,
+        })
+      } catch (yocoError) {
+        logger.error("Yoco Checkout", yocoError as Error, { orderId: order.id })
+        // Don't fail the order, just log the error
+        // Customer can retry payment later
+      }
+    }
+
     return NextResponse.json({
       success: true,
       data: {
@@ -260,6 +302,8 @@ export async function POST(request: NextRequest) {
         total: Number(order.total),
         deliveryType,
         schoolName: school?.name,
+        paymentMethod: data.paymentMethod,
+        paymentRedirectUrl,
       },
     })
   } catch (error) {

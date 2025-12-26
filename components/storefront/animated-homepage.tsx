@@ -905,7 +905,7 @@ export function AnimatedHomepage({
                 </Button>
               </div>
             </AnimatedSection>
-            <ProductGrid products={featuredProducts} />
+            <ProductGrid initialProducts={featuredProducts} />
           </div>
         </section>
       )}

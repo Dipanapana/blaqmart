@@ -23,7 +23,7 @@ const config: Config = {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         primary: {
-          DEFAULT: "#1E3A5F", // Navy Blue - brand primary
+          DEFAULT: "#1E3A5F", // Deep Navy
           foreground: "#FFFFFF",
         },
         secondary: {
@@ -35,24 +35,20 @@ const config: Config = {
           foreground: "hsl(var(--destructive-foreground))",
         },
         muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
+          DEFAULT: "#F8F9FA", // Soft Gray
+          foreground: "#6C757D",
         },
         accent: {
-          DEFAULT: "#FFB81C", // School Gold - brand accent
+          DEFAULT: "#FFB81C", // Warm Gold
           foreground: "#1E3A5F",
-        },
-        success: {
-          DEFAULT: "#22C55E",
-          foreground: "#FFFFFF",
         },
         popover: {
           DEFAULT: "hsl(var(--popover))",
           foreground: "hsl(var(--popover-foreground))",
         },
         card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
+          DEFAULT: "#FFFFFF",
+          foreground: "#1A1A1A",
         },
       },
       borderRadius: {

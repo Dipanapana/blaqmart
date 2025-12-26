@@ -213,7 +213,7 @@ export default async function GradePage({ params }: GradePageProps) {
               </Button>
             </div>
 
-            <ProductGrid products={transformedProducts} />
+            <ProductGrid initialProducts={transformedProducts} />
           </div>
         </section>
       )}
