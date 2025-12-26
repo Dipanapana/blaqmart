@@ -42,7 +42,8 @@
       "Bash(python:*)",
       "Bash(powershell -Command:*)",
       "Bash(find:*)",
-      "Bash(xargs:*)"
+      "Bash(xargs:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

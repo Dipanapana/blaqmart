@@ -9,6 +9,7 @@ import { FeaturedPacks } from "@/components/storefront/featured-packs"
 import { TrustBar } from "@/components/storefront/trust-bar"
 import { ProductGrid } from "@/components/storefront/product-grid"
 import { MobileNavOverlay } from "@/components/storefront/mobile-nav-overlay"
+import { StickyCartSummary } from "@/components/storefront/sticky-cart-summary"
 
 interface MobileHomepageWrapperProps {
     grades: any[]
@@ -50,6 +51,8 @@ export function MobileHomepageWrapper({
                 onClose={() => setIsMenuOpen(false)}
                 grades={grades}
             />
+
+            <StickyCartSummary />
         </div>
     )
 }
