@@ -38,7 +38,7 @@ export function MobileProductDetailWrapper({
           Let's include it but maybe make it conditional or just standard.
           Standard is safer for navigation.
       */}
-            <MobileHeader onMenuClick={() => setIsMenuOpen(true)} cartItemCount={2} />
+            <MobileHeader onMenuClick={() => setIsMenuOpen(true)} />
 
             <main className="pt-14">
                 <ImageCarousel images={product.images} productName={product.name} />

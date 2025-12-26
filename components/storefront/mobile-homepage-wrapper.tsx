@@ -25,7 +25,7 @@ export function MobileHomepageWrapper({
 
     return (
         <div className="min-h-screen bg-white pb-20">
-            <MobileHeader onMenuClick={() => setIsMenuOpen(true)} cartItemCount={0} />
+            <MobileHeader onMenuClick={() => setIsMenuOpen(true)} />
 
             <main className="pt-14">
                 <GradeStories grades={grades} />

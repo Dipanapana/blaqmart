@@ -26,13 +26,9 @@ export function MobileProductsPageWrapper({
 }: MobileProductsPageWrapperProps) {
     const [isMenuOpen, setIsMenuOpen] = useState(false)
 
-    // Mock cart data for now
-    const cartItemCount = 2
-    const cartTotal = 498
-
     return (
         <div className="min-h-screen bg-white pb-24">
-            <MobileHeader onMenuClick={() => setIsMenuOpen(true)} cartItemCount={cartItemCount} />
+            <MobileHeader onMenuClick={() => setIsMenuOpen(true)} />
 
             <main className="pt-14">
                 <StickyGradeStories grades={grades} activeGrade={searchParams.grade} />
@@ -51,7 +47,7 @@ export function MobileProductsPageWrapper({
             </main>
 
             <FilterBottomSheet categories={categories} />
-            <StickyCartSummary itemCount={cartItemCount} total={cartTotal} />
+            <StickyCartSummary />
 
             <MobileNavOverlay
                 isOpen={isMenuOpen}

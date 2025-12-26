@@ -4,14 +4,15 @@ import Link from 'next/link'
 import { ShoppingCart, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useCart } from '@/hooks/use-cart'
+import { formatPrice } from '@/lib/utils'
 
-interface StickyCartSummaryProps {
-    itemCount: number
-    total: number
-}
+export function StickyCartSummary() {
+    const { items, subtotal, itemCount } = useCart()
+    const total = subtotal()
+    const count = itemCount()
 
-export function StickyCartSummary({ itemCount, total }: StickyCartSummaryProps) {
-    if (itemCount === 0) return null
+    if (count === 0) return null
 
     return (
         <AnimatePresence>
@@ -26,12 +27,12 @@ export function StickyCartSummary({ itemCount, total }: StickyCartSummaryProps) 
                         <div className="relative">
                             <ShoppingCart className="h-6 w-6 text-primary" />
                             <span className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-accent text-[10px] font-bold flex items-center justify-center text-primary">
-                                {itemCount}
+                                {count}
                             </span>
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-xs text-gray-500">Total</span>
-                            <span className="font-bold text-lg text-primary">R{total}</span>
+                            <span className="text-xs text-gray-500">{count} item{count !== 1 ? 's' : ''}</span>
+                            <span className="font-bold text-lg text-primary">{formatPrice(total)}</span>
                         </div>
                     </div>
 

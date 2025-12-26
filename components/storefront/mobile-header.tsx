@@ -1,3 +1,5 @@
+'use client'
+
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Menu, Search } from 'lucide-react'
@@ -7,10 +9,9 @@ import { CartSheet } from '@/components/storefront/cart-sheet'
 
 interface MobileHeaderProps {
     onMenuClick: () => void
-    cartItemCount?: number
 }
 
-export function MobileHeader({ onMenuClick, cartItemCount = 0 }: MobileHeaderProps) {
+export function MobileHeader({ onMenuClick }: MobileHeaderProps) {
     const [isScrolled, setIsScrolled] = useState(false)
 
     useEffect(() => {
