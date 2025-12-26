@@ -8,8 +8,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 
 export const metadata: Metadata = {
-  title: "Contact Us | Blaqmart Stationery",
-  description: "Get in touch with Blaqmart Stationery. We're here to help with orders, questions, and custom stationery pack requests.",
+  title: "Contact Us | Blaqmart",
+  description: "Get in touch with Blaqmart. We're here to help with orders, questions, and custom pack requests.",
 }
 
 export default function ContactPage() {
@@ -42,9 +42,9 @@ export default function ContactPage() {
                     <Phone className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <p className="font-medium">Phone</p>
-                    <a href="tel:+27534970000" className="text-muted-foreground hover:text-primary">
-                      +27 53 497 0000
+                    <p className="font-medium">Phone / WhatsApp</p>
+                    <a href="tel:+27794022296" className="text-muted-foreground hover:text-primary">
+                      079 402 2296
                     </a>
                   </div>
                 </div>
@@ -54,9 +54,9 @@ export default function ContactPage() {
                     <MessageCircle className="h-5 w-5 text-green-600" />
                   </div>
                   <div>
-                    <p className="font-medium">WhatsApp</p>
-                    <a href="https://wa.me/27721234567" className="text-muted-foreground hover:text-green-600">
-                      +27 72 123 4567
+                    <p className="font-medium">WhatsApp Us</p>
+                    <a href="https://wa.me/27794022296" className="text-muted-foreground hover:text-green-600">
+                      079 402 2296
                     </a>
                     <p className="text-xs text-muted-foreground mt-1">Quick responses during business hours</p>
                   </div>
@@ -111,7 +111,7 @@ export default function ContactPage() {
                   Get in touch for bulk orders and special requirements.
                 </p>
                 <Button variant="accent" asChild>
-                  <a href="https://wa.me/27721234567?text=Hi,%20I%20need%20a%20custom%20stationery%20pack">
+                  <a href="https://wa.me/27794022296?text=Hi,%20I%20need%20a%20custom%20pack">
                     <MessageCircle className="mr-2 h-4 w-4" />
                     WhatsApp Us
                   </a>

@@ -118,12 +118,14 @@ export function MobileNavOverlay({ isOpen, onClose, grades }: MobileNavOverlayPr
 
                             {/* Footer */}
                             <div className="p-4 border-t bg-gray-50">
-                                <Button className="w-full bg-green-500 hover:bg-green-600 text-white gap-2" size="lg">
-                                    <Phone className="h-4 w-4" />
-                                    WhatsApp Us
+                                <Button className="w-full bg-green-500 hover:bg-green-600 text-white gap-2" size="lg" asChild>
+                                    <a href="https://wa.me/27794022296">
+                                        <Phone className="h-4 w-4" />
+                                        WhatsApp Us
+                                    </a>
                                 </Button>
                                 <p className="text-center text-xs text-gray-400 mt-4">
-                                    Version 2.0.0 • © 2025 Blaqmart
+                                    © 2025 Blaqmart
                                 </p>
                             </div>
                         </div>
