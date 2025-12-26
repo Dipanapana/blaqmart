@@ -826,14 +826,14 @@ export function AnimatedHomepage({
                     <Sparkles className="h-3.5 w-3.5" />
                     Best Sellers
                   </div>
-                  <h2 className="text-2xl font-bold sm:text-3xl">Popular Stationery Packs</h2>
+                  <h2 className="text-2xl font-bold sm:text-3xl">Popular Bundles</h2>
                   <p className="mt-1 text-muted-foreground">
-                    Complete packs with everything your child needs
+                    Complete bundles with everything you need
                   </p>
                 </div>
                 <Button variant="ghost" asChild className="group self-start sm:self-auto">
-                  <Link href="/stationery-packs">
-                    View All Packs
+                  <Link href="/bundles">
+                    View All Bundles
                     <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                   </Link>
                 </Button>

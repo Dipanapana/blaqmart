@@ -11,8 +11,8 @@ export function Footer() {
           <div className="space-y-4">
             <Logo />
             <p className="text-sm text-muted-foreground">
-              Fresh groceries and gift hampers delivered to your door in
-              Pretoria.
+              Quality products delivered to your door in Warrenton, Jan Kempdorp
+              and surrounding areas.
             </p>
             <div className="flex gap-4">
               <a
@@ -123,12 +123,12 @@ export function Footer() {
             <ul className="space-y-3 text-sm">
               <li className="flex items-start gap-2 text-muted-foreground">
                 <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>Pretoria, Gauteng, South Africa</span>
+                <span>Warrenton, Northern Cape, South Africa</span>
               </li>
               <li className="flex items-center gap-2 text-muted-foreground">
                 <Phone className="h-4 w-4 shrink-0" />
-                <a href="tel:+27123456789" className="hover:text-primary">
-                  +27 12 345 6789
+                <a href="tel:+27534970000" className="hover:text-primary">
+                  +27 53 497 0000
                 </a>
               </li>
               <li className="flex items-center gap-2 text-muted-foreground">

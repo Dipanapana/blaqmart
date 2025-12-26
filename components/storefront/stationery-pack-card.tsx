@@ -139,7 +139,7 @@ export function StationeryPackCard({
       </AnimatePresence>
 
       {/* Image with zoom effect */}
-      <Link href={`/stationery-packs/${pack.slug}`} className="relative aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-50 overflow-hidden">
+      <Link href={`/bundles/${pack.slug}`} className="relative aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-50 overflow-hidden">
         {pack.image ? (
           <motion.div
             className="h-full w-full"
@@ -197,7 +197,7 @@ export function StationeryPackCard({
         )}
 
         {/* Title */}
-        <Link href={`/stationery-packs/${pack.slug}`}>
+        <Link href={`/bundles/${pack.slug}`}>
           <h3 className="text-lg font-bold text-gray-900 group-hover:text-primary transition-colors line-clamp-2">
             {pack.name}
           </h3>
@@ -456,15 +456,15 @@ export function FeaturedPacks({
         >
           <div>
             <h2 className="text-3xl font-bold text-gray-900">
-              Popular Stationery Packs
+              Popular Bundles
             </h2>
             <p className="text-gray-500 mt-2 text-lg">
-              Complete packs with everything your child needs
+              Complete bundles with everything you need
             </p>
           </div>
           <motion.div whileHover={{ x: 5 }}>
             <Link
-              href="/stationery-packs"
+              href="/bundles"
               className="text-primary font-semibold hover:underline flex items-center gap-1"
             >
               View all

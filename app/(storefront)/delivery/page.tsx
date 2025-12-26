@@ -176,7 +176,7 @@ export default function DeliveryPage() {
                   This option is completely free!
                 </p>
                 <Button asChild>
-                  <Link href="/stationery-packs">View Stationery Packs</Link>
+                  <Link href="/bundles">View Bundles</Link>
                 </Button>
               </div>
             </div>

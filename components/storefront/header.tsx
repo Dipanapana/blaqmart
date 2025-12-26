@@ -46,10 +46,10 @@ export function Header() {
   }, [])
 
   const navLinks = [
-    { href: "/#shop-by-grade", label: "Shop by Grade", accent: true },
-    { href: "/stationery-packs", label: "Stationery Packs" },
     { href: "/products", label: "Products" },
+    { href: "/bundles", label: "Bundles" },
     { href: "/categories", label: "Categories" },
+    { href: "/#shop-by-grade", label: "Shop by Grade", accent: true },
   ]
 
   return (
@@ -151,7 +151,7 @@ export function Header() {
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Search stationery..."
+                placeholder="Search products..."
                 className="pl-10 bg-gray-50 border-gray-200 focus:bg-white focus:border-primary/50 transition-all rounded-xl"
               />
             </motion.div>
@@ -266,7 +266,7 @@ export function Header() {
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     type="search"
-                    placeholder="Search stationery..."
+                    placeholder="Search products..."
                     className="pl-10 rounded-xl"
                     autoFocus
                   />

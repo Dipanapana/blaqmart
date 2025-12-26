@@ -40,7 +40,9 @@
       "Bash(ls:*)",
       "Bash(netstat:*)",
       "Bash(python:*)",
-      "Bash(powershell -Command:*)"
+      "Bash(powershell -Command:*)",
+      "Bash(find:*)",
+      "Bash(xargs:*)"
     ],
     "deny": [],
     "ask": []

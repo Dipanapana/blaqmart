@@ -28,10 +28,19 @@ export function MobileHomepageWrapper({
             <MobileHeader onMenuClick={() => setIsMenuOpen(true)} />
 
             <main className="pt-14">
-                <GradeStories grades={grades} />
                 <HeroCarousel />
                 <QuickActions />
                 <FeaturedPacks packs={transformedPacks} />
+
+                {/* Shop by Grade section - for school supplies */}
+                <section className="py-6">
+                    <div className="container px-4 mb-2">
+                        <h2 className="text-lg font-bold text-primary">Shop by Grade</h2>
+                        <p className="text-sm text-gray-500">Find school stationery for every grade</p>
+                    </div>
+                    <GradeStories grades={grades} />
+                </section>
+
                 <TrustBar />
                 <ProductGrid initialProducts={transformedProducts} />
             </main>

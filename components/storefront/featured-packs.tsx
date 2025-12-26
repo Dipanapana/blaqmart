@@ -25,8 +25,8 @@ export function FeaturedPacks({ packs }: FeaturedPacksProps) {
     return (
         <section className="py-8 bg-gray-50">
             <div className="container px-4 mb-4 flex items-center justify-between">
-                <h2 className="text-xl font-bold text-primary">Featured Packs</h2>
-                <Link href="/packs" className="text-sm font-medium text-accent flex items-center">
+                <h2 className="text-xl font-bold text-primary">Featured Bundles</h2>
+                <Link href="/bundles" className="text-sm font-medium text-accent flex items-center">
                     See All <ArrowRight className="ml-1 h-4 w-4" />
                 </Link>
             </div>

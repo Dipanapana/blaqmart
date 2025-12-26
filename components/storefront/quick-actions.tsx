@@ -1,16 +1,16 @@
 'use client'
 
 import Link from 'next/link'
-import { Package, BookOpen, School, Calculator, PenTool, GraduationCap } from 'lucide-react'
+import { Package, BookOpen, Sparkles, Calculator, PenTool, Truck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 const actions = [
-    { label: 'Packs', icon: Package, href: '/packs', color: 'bg-blue-100 text-blue-700' },
+    { label: 'Bundles', icon: Package, href: '/bundles', color: 'bg-blue-100 text-blue-700' },
     { label: 'Products', icon: BookOpen, href: '/products', color: 'bg-green-100 text-green-700' },
-    { label: 'Schools', icon: School, href: '/schools', color: 'bg-amber-100 text-amber-700' },
+    { label: 'New', icon: Sparkles, href: '/products?sort=newest', color: 'bg-amber-100 text-amber-700' },
     { label: 'Calculators', icon: Calculator, href: '/category/calculators', color: 'bg-purple-100 text-purple-700' },
     { label: 'Writing', icon: PenTool, href: '/category/writing', color: 'bg-rose-100 text-rose-700' },
-    { label: 'Grade 12', icon: GraduationCap, href: '/grade/12', color: 'bg-indigo-100 text-indigo-700' },
+    { label: 'Delivery', icon: Truck, href: '/delivery', color: 'bg-indigo-100 text-indigo-700' },
 ]
 
 export function QuickActions() {

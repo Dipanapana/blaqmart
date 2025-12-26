@@ -11,19 +11,19 @@ import { cn } from '@/lib/utils'
 const slides = [
     {
         id: 1,
-        image: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=2022&auto=format&fit=crop',
-        title: 'Back to School 2025',
-        subtitle: 'Complete packs from R199',
+        image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=2070&auto=format&fit=crop',
+        title: 'Quality Products',
+        subtitle: 'Delivered to your door',
         cta: 'Shop Now',
-        link: '/packs'
+        link: '/products'
     },
     {
         id: 2,
-        image: 'https://images.unsplash.com/photo-1452860606245-08befc0ff44b?q=80&w=2070&auto=format&fit=crop',
-        title: 'Premium Stationery',
-        subtitle: 'Quality brands you trust',
-        cta: 'View Products',
-        link: '/products'
+        image: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=2022&auto=format&fit=crop',
+        title: 'Back to School 2025',
+        subtitle: 'Complete stationery packs from R199',
+        cta: 'Shop Bundles',
+        link: '/bundles'
     },
     {
         id: 3,

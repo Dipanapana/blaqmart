@@ -107,8 +107,8 @@ export function MobileProductDetailWrapper({
                         <AccordionItem value="delivery">
                             <AccordionTrigger>Delivery Information</AccordionTrigger>
                             <AccordionContent className="text-gray-600 space-y-2">
-                                <p><strong>Same-Day Delivery:</strong> Order before 2pm for same-day delivery in Pretoria.</p>
-                                <p><strong>Delivery Areas:</strong> We deliver to Pretoria Central, East, North, and Centurion.</p>
+                                <p><strong>Same-Day Delivery:</strong> Order before 2pm for same-day delivery in Warrenton and Jan Kempdorp.</p>
+                                <p><strong>Delivery Areas:</strong> Warrenton, Jan Kempdorp, Hartswater, Christiana, Kimberley and surrounding areas.</p>
                                 <p><strong>Free Delivery:</strong> On orders over R500.</p>
                             </AccordionContent>
                         </AccordionItem>
