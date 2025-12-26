@@ -241,14 +241,29 @@ export default function CheckoutPage() {
     }
   })
 
-  // Pre-fill user data if logged in
+  // Pre-fill user data if logged in + smart defaults
   useEffect(() => {
     if (session?.user) {
       setValue("email", session.user.email || "")
       setValue("recipientName", session.user.name || "")
       setValue("collectorName", session.user.name || "")
     }
-  }, [session, setValue])
+
+    // Smart defaults for faster checkout
+    // Default town to Warrenton (most common)
+    if (!watch("town")) {
+      setValue("town", "Warrenton")
+      setValue("city", "Warrenton")
+    }
+
+    // Default to today + morning slot for quick checkout
+    if (!watch("deliveryDate") && availableDates.length > 0) {
+      setValue("deliveryDate", availableDates[0].value)
+    }
+    if (!watch("deliverySlot")) {
+      setValue("deliverySlot", "morning")
+    }
+  }, [session, setValue, watch, availableDates])
 
   const handleStepChange = async (nextStep: number) => {
     // Validate current step before proceeding
@@ -338,7 +353,7 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="container py-8">
+    <div className="container px-4 sm:px-6 py-6 sm:py-8">
       <motion.h1
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -409,7 +424,7 @@ export default function CheckoutPage() {
                         How would you like to receive your order?
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="p-6 space-y-6">
+                    <CardContent className="p-4 sm:p-6 space-y-5 sm:space-y-6">
                       {/* Delivery Method Selection */}
                       <div className="grid gap-4 sm:grid-cols-2">
                         {/* Home Delivery */}
@@ -538,9 +553,11 @@ export default function CheckoutPage() {
                             <Input
                               id="email"
                               type="email"
+                              inputMode="email"
+                              autoComplete="email"
+                              autoCapitalize="none"
                               placeholder="you@example.com"
                               {...register("email")}
-                              className="h-11"
                             />
                             {errors.email && (
                               <p className="text-sm text-destructive">
@@ -553,9 +570,10 @@ export default function CheckoutPage() {
                             <Input
                               id="phone"
                               type="tel"
+                              inputMode="tel"
+                              autoComplete="tel"
                               placeholder="+27 12 345 6789"
                               {...register("phone")}
-                              className="h-11"
                             />
                             {errors.phone && (
                               <p className="text-sm text-destructive">
@@ -595,7 +613,7 @@ export default function CheckoutPage() {
                         )}
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="p-6 space-y-6">
+                    <CardContent className="p-4 sm:p-6 space-y-5 sm:space-y-6">
                       {deliveryMethod === "school" ? (
                         // School Collection Form
                         <motion.div
@@ -703,9 +721,10 @@ export default function CheckoutPage() {
                                 <Input
                                   id="collectorPhone"
                                   type="tel"
+                                  inputMode="tel"
+                                  autoComplete="tel"
                                   placeholder="+27 12 345 6789"
                                   {...register("collectorPhone")}
-                                  className="h-11"
                                 />
                                 {errors.collectorPhone && (
                                   <p className="text-sm text-destructive">
@@ -940,24 +959,23 @@ export default function CheckoutPage() {
                           {/* Delivery Date & Time */}
                           <motion.div variants={fadeInUp} className="space-y-4">
                             <Label>Delivery Date</Label>
-                            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-7">
+                            <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 snap-x no-scrollbar md:mx-0 md:px-0 md:grid md:grid-cols-7 md:gap-2 md:overflow-visible">
                               {availableDates.map((date) => (
                                 <motion.button
                                   key={date.value}
                                   type="button"
-                                  whileHover={{ scale: 1.05 }}
                                   whileTap={{ scale: 0.95 }}
                                   onClick={() => setValue("deliveryDate", date.value)}
-                                  className={`rounded-xl border-2 p-3 text-center transition-all ${
+                                  className={`snap-start flex-shrink-0 w-20 md:w-auto rounded-xl border-2 p-3 text-center transition-all active:scale-95 ${
                                     watch("deliveryDate") === date.value
                                       ? "border-primary bg-primary/10 shadow-md"
-                                      : "border-gray-200 hover:border-primary/40"
+                                      : "border-gray-200 active:border-primary/40"
                                   }`}
                                 >
                                   <p className="text-xs text-muted-foreground">
                                     {date.isToday ? "Today" : date.label.split(" ")[0]}
                                   </p>
-                                  <p className="font-semibold">
+                                  <p className="text-xl md:text-base font-bold">
                                     {date.label.split(" ")[1]}
                                   </p>
                                   <p className="text-xs">
@@ -975,24 +993,29 @@ export default function CheckoutPage() {
 
                           <motion.div variants={fadeInUp} className="space-y-4">
                             <Label>Delivery Time</Label>
-                            <div className="grid gap-3 sm:grid-cols-3">
+                            <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 no-scrollbar sm:mx-0 sm:px-0 sm:grid sm:grid-cols-3 sm:gap-3 sm:overflow-visible">
                               {deliverySlots.map((slot) => (
                                 <motion.button
                                   key={slot.id}
                                   type="button"
-                                  whileHover={{ scale: 1.02 }}
-                                  whileTap={{ scale: 0.98 }}
+                                  whileTap={{ scale: 0.95 }}
                                   onClick={() => setValue("deliverySlot", slot.id)}
-                                  className={`rounded-xl border-2 p-4 text-left transition-all ${
+                                  className={`flex-shrink-0 whitespace-nowrap rounded-full sm:rounded-xl border-2 px-5 py-3 sm:p-4 text-sm sm:text-base font-medium transition-all active:scale-95 ${
                                     watch("deliverySlot") === slot.id
-                                      ? "border-primary bg-primary/10 shadow-md"
-                                      : "border-gray-200 hover:border-primary/40"
+                                      ? "border-primary bg-primary text-primary-foreground shadow-md"
+                                      : "border-gray-200 active:border-primary/40"
                                   }`}
                                 >
-                                  <p className="font-medium">{slot.label}</p>
+                                  <span className="sm:hidden">{slot.label.split(" ")[0]}</span>
+                                  <span className="hidden sm:inline">{slot.label}</span>
                                 </motion.button>
                               ))}
                             </div>
+                            {watch("deliverySlot") && (
+                              <p className="text-sm text-muted-foreground sm:hidden">
+                                {deliverySlots.find(s => s.id === watch("deliverySlot"))?.label}
+                              </p>
+                            )}
                             {errors.deliverySlot && (
                               <p className="text-sm text-destructive">
                                 {errors.deliverySlot.message}
@@ -1046,7 +1069,7 @@ export default function CheckoutPage() {
                         Review & Pay
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="p-6 space-y-6">
+                    <CardContent className="p-4 sm:p-6 space-y-5 sm:space-y-6">
                       {/* Payment Method Selection */}
                       <div className="space-y-4">
                         <h3 className="font-medium">Payment Method</h3>
@@ -1301,8 +1324,8 @@ export default function CheckoutPage() {
             </motion.div>
           </div>
 
-          {/* Order Summary Sidebar */}
-          <div>
+          {/* Order Summary Sidebar - Hidden on mobile, shown on lg+ */}
+          <div className="hidden lg:block">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -1396,7 +1419,57 @@ export default function CheckoutPage() {
             </motion.div>
           </div>
         </div>
+
+        {/* Spacer for mobile sticky bar */}
+        <div className="h-24 lg:hidden" />
       </form>
+
+      {/* Sticky Mobile Order Summary - Only visible on mobile/tablet */}
+      <motion.div
+        initial={{ y: 100 }}
+        animate={{ y: 0 }}
+        className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur-sm p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] lg:hidden"
+      >
+        <div className="container flex items-center justify-between gap-4">
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">{items.length} item{items.length !== 1 ? 's' : ''}</span>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-xl font-bold text-primary">{formatPrice(total)}</span>
+              {deliveryFee === 0 && (
+                <span className="text-xs text-green-600 font-medium">Free delivery</span>
+              )}
+            </div>
+          </div>
+          <Button
+            type="submit"
+            form="checkout-form"
+            onClick={handleSubmit(onSubmit)}
+            disabled={isProcessing}
+            size="lg"
+            className="min-w-[140px] shadow-lg"
+          >
+            {isProcessing ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                Processing
+              </>
+            ) : currentStep === 2 ? (
+              <>
+                <Check className="h-4 w-4 mr-2" />
+                Place Order
+              </>
+            ) : (
+              <>
+                Continue
+                <ChevronRight className="h-4 w-4 ml-2" />
+              </>
+            )}
+          </Button>
+        </div>
+      </motion.div>
     </div>
   )
 }
