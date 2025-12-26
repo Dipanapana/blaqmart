@@ -274,11 +274,36 @@ export default function CheckoutPage() {
     setCurrentStep(nextStep)
   }
 
-  const onSubmit = async (data: CheckoutForm) => {
+  // Get fields to validate for each step
+  const getStepFields = (step: number): (keyof CheckoutForm)[] => {
+    if (step === 0) {
+      return ["deliveryMethod", "email", "phone"]
+    }
+    if (step === 1) {
+      if (deliveryMethod === "school") {
+        return ["schoolId", "collectorName", "collectorPhone"]
+      }
+      return ["recipientName", "streetAddress", "town", "deliveryDate", "deliverySlot"]
+    }
+    return ["paymentMethod"]
+  }
+
+  // Handle continue button with step-specific validation
+  const handleContinue = async () => {
+    const fieldsToValidate = getStepFields(currentStep)
+    const isValid = await trigger(fieldsToValidate)
+
+    if (!isValid) return
+
     if (currentStep < 2) {
       setCurrentStep(currentStep + 1)
-      return
+    } else {
+      // Final step - submit the form
+      handleSubmit(onSubmit)()
     }
+  }
+
+  const onSubmit = async (data: CheckoutForm) => {
 
     setIsProcessing(true)
 
@@ -403,7 +428,7 @@ export default function CheckoutPage() {
         </div>
       </motion.div>
 
-      <form onSubmit={handleSubmit(onSubmit)}>
+      <form id="checkout-form" onSubmit={handleSubmit(onSubmit)}>
         <div className="grid gap-8 lg:grid-cols-3">
           {/* Main Form */}
           <div className="lg:col-span-2">
@@ -1300,7 +1325,8 @@ export default function CheckoutPage() {
                 Back
               </Button>
               <Button
-                type="submit"
+                type="button"
+                onClick={handleContinue}
                 disabled={isProcessing}
                 className="gap-2 min-w-[140px]"
               >
@@ -1444,9 +1470,8 @@ export default function CheckoutPage() {
             </div>
           </div>
           <Button
-            type="submit"
-            form="checkout-form"
-            onClick={handleSubmit(onSubmit)}
+            type="button"
+            onClick={handleContinue}
             disabled={isProcessing}
             size="lg"
             className="min-w-[140px] shadow-lg"
