@@ -4,7 +4,7 @@ import { ArrowLeft, Package, GraduationCap, Sparkles } from 'lucide-react'
 import { db } from '@/lib/db'
 import { Button } from '@/components/ui/button'
 import { ProductGrid } from '@/components/storefront/product-grid'
-import { StationeryPackCard } from '@/components/storefront/stationery-pack-card'
+import { StationeryPackCardWithCart } from '@/components/storefront/stationery-pack-card-with-cart'
 import { GradeSelectorCompact } from '@/components/storefront/grade-selector'
 
 interface GradePageProps {
@@ -168,9 +168,10 @@ export default async function GradePage({ params }: GradePageProps) {
             </div>
 
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {packs.map((pack) => (
-                <StationeryPackCard
+              {packs.map((pack, index) => (
+                <StationeryPackCardWithCart
                   key={pack.id}
+                  index={index}
                   pack={{
                     id: pack.id,
                     name: pack.name,

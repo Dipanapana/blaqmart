@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { Package, GraduationCap, Filter, Sparkles } from 'lucide-react'
 import { db } from '@/lib/db'
 import { Button } from '@/components/ui/button'
-import { StationeryPackCard } from '@/components/storefront/stationery-pack-card'
+import { StationeryPackCardWithCart } from '@/components/storefront/stationery-pack-card-with-cart'
 import { GradeSelectorCompact } from '@/components/storefront/grade-selector'
 
 interface StationeryPacksPageProps {
@@ -140,9 +140,10 @@ export default async function StationeryPacksPage({ searchParams }: StationeryPa
               </div>
               {packs.length > 0 ? (
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {packs.map((pack) => (
-                    <StationeryPackCard
+                  {packs.map((pack, index) => (
+                    <StationeryPackCardWithCart
                       key={pack.id}
+                      index={index}
                       pack={{
                         id: pack.id,
                         name: pack.name,
@@ -192,9 +193,10 @@ export default async function StationeryPacksPage({ searchParams }: StationeryPa
                     </div>
                   </div>
                   <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {phase.packs.map((pack) => (
-                      <StationeryPackCard
+                    {phase.packs.map((pack, index) => (
+                      <StationeryPackCardWithCart
                         key={pack.id}
+                        index={index}
                         pack={{
                           id: pack.id,
                           name: pack.name,
