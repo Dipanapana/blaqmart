@@ -348,45 +348,59 @@ export default function CheckoutPage() {
     try {
       const isSchoolCollection = data.deliveryMethod === "school"
 
+      const orderPayload = {
+        items: items.map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+        })),
+        deliveryMethod: data.deliveryMethod,
+        // School collection fields
+        schoolId: isSchoolCollection ? data.schoolId : undefined,
+        collectorName: isSchoolCollection ? data.collectorName : undefined,
+        collectorPhone: isSchoolCollection ? data.collectorPhone : undefined,
+        childName: isSchoolCollection ? data.childName : undefined,
+        childGrade: isSchoolCollection ? data.childGrade : undefined,
+        // Home delivery fields
+        shippingAddress: isSchoolCollection ? undefined : {
+          recipientName: data.recipientName,
+          phone: data.phone,
+          streetAddress: data.streetAddress,
+          suburb: data.town,
+          city: data.city || data.town,
+          postalCode: data.postalCode || "0000",
+          province: data.province || "Northern Cape",
+        },
+        deliveryDate: isSchoolCollection ? undefined : data.deliveryDate,
+        deliverySlot: isSchoolCollection ? undefined : data.deliverySlot,
+        deliveryNotes: data.deliveryNotes,
+        giftMessage,
+        guestEmail: session ? undefined : data.email,
+        guestPhone: session ? undefined : data.phone,
+        paymentMethod: data.paymentMethod,
+      }
+
+      // Debug log to see what's being sent
+      console.log("Order payload:", JSON.stringify(orderPayload, null, 2))
+
       // Create order
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          items: items.map((item) => ({
-            productId: item.productId,
-            quantity: item.quantity,
-          })),
-          deliveryMethod: data.deliveryMethod,
-          // School collection fields
-          schoolId: isSchoolCollection ? data.schoolId : undefined,
-          collectorName: isSchoolCollection ? data.collectorName : undefined,
-          collectorPhone: isSchoolCollection ? data.collectorPhone : undefined,
-          childName: isSchoolCollection ? data.childName : undefined,
-          childGrade: isSchoolCollection ? data.childGrade : undefined,
-          // Home delivery fields
-          shippingAddress: isSchoolCollection ? undefined : {
-            recipientName: data.recipientName,
-            phone: data.phone,
-            streetAddress: data.streetAddress,
-            suburb: data.town,
-            city: data.city || data.town,
-            postalCode: data.postalCode || "0000",
-            province: data.province || "Northern Cape",
-          },
-          deliveryDate: isSchoolCollection ? undefined : data.deliveryDate,
-          deliverySlot: isSchoolCollection ? undefined : data.deliverySlot,
-          deliveryNotes: data.deliveryNotes,
-          giftMessage,
-          guestEmail: session ? undefined : data.email,
-          guestPhone: session ? undefined : data.phone,
-          paymentMethod: data.paymentMethod,
-        }),
+        body: JSON.stringify(orderPayload),
       })
 
       const result = await response.json()
 
       if (!response.ok) {
+        // Log the full error details for debugging
+        console.error("Order API error:", result)
+        // Show validation details if available
+        if (result.details && Array.isArray(result.details)) {
+          const validationErrors = result.details
+            .map((d: { path?: string[]; message?: string }) => `${d.path?.join('.') || 'field'}: ${d.message}`)
+            .join('\n')
+          throw new Error(`${result.error}\n${validationErrors}`)
+        }
         throw new Error(result.error || "Failed to create order")
       }
 
@@ -406,7 +420,8 @@ export default function CheckoutPage() {
       }
     } catch (error) {
       console.error("Checkout error:", error)
-      alert("Something went wrong. Please try again.")
+      const errorMessage = error instanceof Error ? error.message : "Something went wrong"
+      alert(errorMessage)
     } finally {
       setIsProcessing(false)
     }
