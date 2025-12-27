@@ -1,6 +1,6 @@
 'use client'
 
-import { ArrowRight, Loader2 } from 'lucide-react'
+import { ArrowRight, Loader2, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { motion, AnimatePresence } from 'framer-motion'
 import { formatPrice } from '@/lib/utils'
@@ -11,6 +11,7 @@ interface StickyCheckoutSummaryProps {
     isProcessing?: boolean
     step: number
     isValid?: boolean
+    formId?: string
 }
 
 export function StickyCheckoutSummary({
@@ -18,7 +19,7 @@ export function StickyCheckoutSummary({
     onContinue,
     isProcessing = false,
     step,
-    isValid = true
+    formId = "checkout-form"
 }: StickyCheckoutSummaryProps) {
 
     const getButtonText = () => {
@@ -28,6 +29,11 @@ export function StickyCheckoutSummary({
             case 2: return "Place Order"
             default: return "Continue"
         }
+    }
+
+    const handleClick = (e: React.MouseEvent) => {
+        e.preventDefault()
+        onContinue()
     }
 
     return (
@@ -45,18 +51,24 @@ export function StickyCheckoutSummary({
                     </div>
 
                     <Button
-                        className="flex-1 bg-primary hover:bg-primary/90 text-white font-bold h-12 rounded-xl"
-                        onClick={onContinue}
-                        disabled={isProcessing || !isValid}
+                        type="button"
+                        className="flex-1 bg-primary hover:bg-primary/90 text-white font-bold h-14 rounded-xl text-base active:scale-[0.98] transition-transform"
+                        onClick={handleClick}
+                        disabled={isProcessing}
                     >
                         {isProcessing ? (
                             <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                                 Processing...
+                            </>
+                        ) : step === 2 ? (
+                            <>
+                                <Check className="mr-2 h-5 w-5" />
+                                {getButtonText()}
                             </>
                         ) : (
                             <>
-                                {getButtonText()} <ArrowRight className="ml-2 h-4 w-4" />
+                                {getButtonText()} <ArrowRight className="ml-2 h-5 w-5" />
                             </>
                         )}
                     </Button>

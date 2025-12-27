@@ -297,16 +297,33 @@ export default function CheckoutPage() {
     const fieldsToValidate = getStepFields(currentStep)
     const isValid = await trigger(fieldsToValidate)
 
-    if (!isValid) return
+    if (!isValid) {
+      // Scroll to first error on mobile
+      setTimeout(() => {
+        const firstError = document.querySelector('[class*="text-destructive"]')
+        if (firstError) {
+          firstError.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+      }, 100)
+      return
+    }
 
     if (currentStep < 2) {
       setCurrentStep(currentStep + 1)
+      // Scroll to top on step change
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     } else {
       // Final step - check terms acceptance and submit
       const termsAccepted = watch("termsAccepted")
       if (!termsAccepted) {
-        // Trigger error for terms
-        setValue("termsAccepted", false, { shouldValidate: true })
+        // Show error for terms - scroll to checkbox
+        const termsElement = document.getElementById('terms')
+        if (termsElement) {
+          termsElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          termsElement.focus()
+        }
+        // Show alert for mobile users
+        alert("Please accept the Terms & Conditions to place your order")
         return
       }
       // Submit the form
@@ -589,9 +606,9 @@ export default function CheckoutPage() {
                             </p>
                           </div>
                         )}
-                        <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="grid gap-4">
                           <div className="space-y-2">
-                            <Label htmlFor="email">Email</Label>
+                            <Label htmlFor="email" className="text-sm font-medium">Email Address</Label>
                             <Input
                               id="email"
                               type="email"
@@ -599,6 +616,7 @@ export default function CheckoutPage() {
                               autoComplete="email"
                               autoCapitalize="none"
                               placeholder="you@example.com"
+                              className="h-12 text-base"
                               {...register("email")}
                             />
                             {errors.email && (
@@ -608,13 +626,14 @@ export default function CheckoutPage() {
                             )}
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="phone">Phone</Label>
+                            <Label htmlFor="phone" className="text-sm font-medium">Phone Number</Label>
                             <Input
                               id="phone"
                               type="tel"
                               inputMode="tel"
                               autoComplete="tel"
-                              placeholder="+27 12 345 6789"
+                              placeholder="079 123 4567"
+                              className="h-12 text-base"
                               {...register("phone")}
                             />
                             {errors.phone && (
@@ -743,14 +762,15 @@ export default function CheckoutPage() {
                               <User className="h-4 w-4 text-accent" />
                               Who will collect?
                             </h3>
-                            <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="space-y-4">
                               <div className="space-y-2">
-                                <Label htmlFor="collectorName">Collector Name</Label>
+                                <Label htmlFor="collectorName" className="text-sm font-medium">Collector Name</Label>
                                 <Input
                                   id="collectorName"
                                   placeholder="Parent or child's name"
+                                  autoComplete="name"
                                   {...register("collectorName")}
-                                  className="h-11"
+                                  className="h-12 text-base"
                                 />
                                 {errors.collectorName && (
                                   <p className="text-sm text-destructive">
@@ -759,14 +779,15 @@ export default function CheckoutPage() {
                                 )}
                               </div>
                               <div className="space-y-2">
-                                <Label htmlFor="collectorPhone">Collector Phone</Label>
+                                <Label htmlFor="collectorPhone" className="text-sm font-medium">Collector Phone</Label>
                                 <Input
                                   id="collectorPhone"
                                   type="tel"
                                   inputMode="tel"
                                   autoComplete="tel"
-                                  placeholder="+27 12 345 6789"
+                                  placeholder="079 123 4567"
                                   {...register("collectorPhone")}
+                                  className="h-12 text-base"
                                 />
                                 {errors.collectorPhone && (
                                   <p className="text-sm text-destructive">
@@ -781,22 +802,22 @@ export default function CheckoutPage() {
                           <motion.div variants={fadeInUp} className="space-y-4">
                             <h3 className="font-medium flex items-center gap-2 text-muted-foreground">
                               <GraduationCap className="h-4 w-4" />
-                              Child&apos;s Details (Optional - helps school identify order)
+                              Child&apos;s Details (Optional)
                             </h3>
-                            <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="space-y-4">
                               <div className="space-y-2">
-                                <Label htmlFor="childName">Child&apos;s Name</Label>
+                                <Label htmlFor="childName" className="text-sm font-medium">Child&apos;s Name</Label>
                                 <Input
                                   id="childName"
                                   placeholder="Child's full name"
                                   {...register("childName")}
-                                  className="h-11"
+                                  className="h-12 text-base"
                                 />
                               </div>
                               <div className="space-y-2">
-                                <Label htmlFor="childGrade">Child&apos;s Grade</Label>
+                                <Label htmlFor="childGrade" className="text-sm font-medium">Child&apos;s Grade</Label>
                                 <Select onValueChange={(value) => setValue("childGrade", value)}>
-                                  <SelectTrigger className="h-11">
+                                  <SelectTrigger className="h-12 text-base">
                                     <SelectValue placeholder="Select grade" />
                                   </SelectTrigger>
                                   <SelectContent>
@@ -847,12 +868,13 @@ export default function CheckoutPage() {
                           <Separator />
 
                           <motion.div variants={fadeInUp} className="space-y-2">
-                            <Label htmlFor="recipientName">Recipient Name</Label>
+                            <Label htmlFor="recipientName" className="text-sm font-medium">Recipient Name</Label>
                             <Input
                               id="recipientName"
                               placeholder="Who will receive this order?"
+                              autoComplete="name"
                               {...register("recipientName")}
-                              className="h-11"
+                              className="h-12 text-base"
                             />
                             {errors.recipientName && (
                               <p className="text-sm text-destructive">
@@ -862,12 +884,13 @@ export default function CheckoutPage() {
                           </motion.div>
 
                           <motion.div variants={fadeInUp} className="space-y-2">
-                            <Label htmlFor="streetAddress">Street Address</Label>
+                            <Label htmlFor="streetAddress" className="text-sm font-medium">Street Address</Label>
                             <Input
                               id="streetAddress"
                               placeholder="123 Main Street, Apartment 4B"
+                              autoComplete="street-address"
                               {...register("streetAddress")}
-                              className="h-11"
+                              className="h-12 text-base"
                             />
                             {errors.streetAddress && (
                               <p className="text-sm text-destructive">
@@ -876,16 +899,16 @@ export default function CheckoutPage() {
                             )}
                           </motion.div>
 
-                          <motion.div variants={fadeInUp} className="grid gap-4 sm:grid-cols-2">
+                          <motion.div variants={fadeInUp} className="space-y-4">
                             <div className="space-y-2">
-                              <Label htmlFor="town">Town</Label>
+                              <Label htmlFor="town" className="text-sm font-medium">Delivery Town</Label>
                               <Select
                                 onValueChange={(value) => {
                                   setValue("town", value)
                                   setValue("city", value)
                                 }}
                               >
-                                <SelectTrigger data-testid="town-select" className="h-11">
+                                <SelectTrigger data-testid="town-select" className="h-12 text-base">
                                   <SelectValue placeholder="Select your town" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -922,12 +945,14 @@ export default function CheckoutPage() {
                               )}
                             </div>
                             <div className="space-y-2">
-                              <Label htmlFor="postalCode">Postal Code</Label>
+                              <Label htmlFor="postalCode" className="text-sm font-medium">Postal Code (Optional)</Label>
                               <Input
                                 id="postalCode"
                                 placeholder="8530"
+                                inputMode="numeric"
+                                autoComplete="postal-code"
                                 {...register("postalCode")}
-                                className="h-11"
+                                className="h-12 text-base"
                               />
                             </div>
                           </motion.div>
@@ -965,22 +990,23 @@ export default function CheckoutPage() {
                             </motion.div>
                           )}
 
-                          <motion.div variants={fadeInUp} className="grid gap-4 sm:grid-cols-2">
+                          <motion.div variants={fadeInUp} className="space-y-4">
                             <div className="space-y-2">
-                              <Label htmlFor="city">City/Town</Label>
+                              <Label htmlFor="city" className="text-sm font-medium">City/Town (Optional)</Label>
                               <Input
                                 id="city"
+                                autoComplete="address-level2"
                                 {...register("city")}
-                                className="h-11"
+                                className="h-12 text-base"
                               />
                             </div>
                             <div className="space-y-2">
-                              <Label htmlFor="province">Province</Label>
+                              <Label htmlFor="province" className="text-sm font-medium">Province</Label>
                               <Select
                                 defaultValue="Northern Cape"
                                 onValueChange={(value) => setValue("province", value)}
                               >
-                                <SelectTrigger className="h-11">
+                                <SelectTrigger className="h-12 text-base">
                                   <SelectValue placeholder="Select province" />
                                 </SelectTrigger>
                                 <SelectContent>
