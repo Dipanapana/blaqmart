@@ -1093,7 +1093,8 @@ export default function CheckoutPage() {
                             <motion.div variants={fadeInUp} className="flex items-center space-x-2">
                               <Checkbox
                                 id="saveAddress"
-                                {...register("saveAddress")}
+                                checked={watch("saveAddress") || false}
+                                onCheckedChange={(checked) => setValue("saveAddress", checked === true)}
                               />
                               <Label htmlFor="saveAddress" className="text-sm">
                                 Save this address for future orders
