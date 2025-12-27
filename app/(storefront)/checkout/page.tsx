@@ -544,55 +544,35 @@ export default function CheckoutPage() {
                           )}
                         </motion.button>
 
-                        {/* School Collection */}
-                        <motion.button
-                          type="button"
-                          whileHover={{ scale: 1.02, y: -4 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => setValue("deliveryMethod", "school")}
-                          className={`relative rounded-2xl border-2 p-6 text-left transition-all duration-300 ${deliveryMethod === "school"
-                              ? "border-accent bg-gradient-to-br from-accent/5 to-accent/10 shadow-lg shadow-accent/10"
-                              : "border-gray-200 hover:border-accent/40 hover:bg-gray-50"
-                            }`}
+                        {/* School Collection - Coming Soon */}
+                        <div
+                          className="relative rounded-2xl border-2 border-dashed border-gray-200 p-6 text-left opacity-60 cursor-not-allowed"
                         >
                           <div className="flex items-start gap-4">
-                            <div className={`rounded-xl p-3 ${deliveryMethod === "school"
-                                ? "bg-accent text-white"
-                                : "bg-gray-100 text-gray-500"
-                              }`}>
+                            <div className="rounded-xl p-3 bg-gray-100 text-gray-400">
                               <School className="h-6 w-6" />
                             </div>
                             <div className="flex-1">
-                              <h3 className="font-semibold text-lg flex items-center gap-2">
+                              <h3 className="font-semibold text-lg flex items-center gap-2 text-gray-500">
                                 Collect at School
-                                <span className="inline-flex items-center gap-0.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 px-2 py-0.5 text-[10px] font-bold text-amber-900">
-                                  <Sparkles className="h-2.5 w-2.5" />
-                                  NEW
+                                <span className="inline-flex items-center gap-0.5 rounded-full bg-gray-200 px-2 py-0.5 text-[10px] font-bold text-gray-600">
+                                  COMING SOON
                                 </span>
                               </h3>
-                              <p className="text-sm text-muted-foreground mt-1">
-                                We deliver to your child&apos;s school for easy collection
+                              <p className="text-sm text-gray-400 mt-1">
+                                We&apos;ll deliver to your child&apos;s school for easy collection
                               </p>
                               <div className="mt-3 flex flex-wrap gap-2">
-                                <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
-                                  <Check className="h-3 w-3" /> Free Delivery
+                                <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
+                                  Free Delivery
                                 </span>
-                                <span className="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
+                                <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
                                   Partner Schools
                                 </span>
                               </div>
                             </div>
                           </div>
-                          {deliveryMethod === "school" && (
-                            <motion.div
-                              initial={{ scale: 0 }}
-                              animate={{ scale: 1 }}
-                              className="absolute -top-2 -right-2 rounded-full bg-accent p-1.5 text-white shadow-lg"
-                            >
-                              <Check className="h-4 w-4" />
-                            </motion.div>
-                          )}
-                        </motion.button>
+                        </div>
                       </div>
 
                       <Separator />
