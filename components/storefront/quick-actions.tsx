@@ -8,8 +8,8 @@ const actions = [
     { label: 'Bundles', icon: Package, href: '/bundles', color: 'bg-blue-100 text-blue-700' },
     { label: 'Products', icon: BookOpen, href: '/products', color: 'bg-green-100 text-green-700' },
     { label: 'New', icon: Sparkles, href: '/products?sort=newest', color: 'bg-amber-100 text-amber-700' },
-    { label: 'Calculators', icon: Calculator, href: '/category/calculators', color: 'bg-purple-100 text-purple-700' },
-    { label: 'Writing', icon: PenTool, href: '/category/writing', color: 'bg-rose-100 text-rose-700' },
+    { label: 'Calculators', icon: Calculator, href: '/categories/calculators', color: 'bg-purple-100 text-purple-700' },
+    { label: 'Writing', icon: PenTool, href: '/categories/writing-instruments', color: 'bg-rose-100 text-rose-700' },
     { label: 'Delivery', icon: Truck, href: '/delivery', color: 'bg-indigo-100 text-indigo-700' },
 ]
 

@@ -33,8 +33,14 @@ export function Header() {
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
+  const [isMounted, setIsMounted] = useState(false)
   const { itemCount, openCart } = useCart()
-  const cartCount = itemCount()
+  const cartCount = isMounted ? itemCount() : 0
+
+  // Prevent hydration mismatch - only show cart count after mount
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
   // Track scroll for header shrink effect
   useEffect(() => {
@@ -219,7 +225,7 @@ export function Header() {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/account" className="flex items-center">
+                    <Link href="/orders" className="flex items-center">
                       <Settings className="mr-2 h-4 w-4" />
                       Account Settings
                     </Link>

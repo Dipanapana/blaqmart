@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ShoppingCart, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -8,7 +9,16 @@ import { useCart } from '@/hooks/use-cart'
 import { formatPrice } from '@/lib/utils'
 
 export function StickyCartSummary() {
-    const { items, subtotal, itemCount } = useCart()
+    const [isMounted, setIsMounted] = useState(false)
+    const { subtotal, itemCount } = useCart()
+
+    useEffect(() => {
+        setIsMounted(true)
+    }, [])
+
+    // Don't render until mounted to prevent hydration mismatch
+    if (!isMounted) return null
+
     const total = subtotal()
     const count = itemCount()
 
