@@ -326,8 +326,18 @@ export default function CheckoutPage() {
         alert("Please accept the Terms & Conditions to place your order")
         return
       }
-      // Submit the form
-      handleSubmit(onSubmit)()
+      // Submit the form with error handling
+      handleSubmit(
+        onSubmit,
+        (errors) => {
+          // Handle validation errors
+          console.error("Form validation errors:", errors)
+          const errorMessages = Object.entries(errors)
+            .map(([field, error]) => `${field}: ${error?.message || 'Invalid'}`)
+            .join('\n')
+          alert(`Please fix the following errors:\n${errorMessages}`)
+        }
+      )()
     }
   }
 

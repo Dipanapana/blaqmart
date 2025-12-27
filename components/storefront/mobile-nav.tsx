@@ -22,9 +22,9 @@ const navItems = [
     label: "Hamper",
   },
   {
-    href: "/account",
+    href: "/orders",
     icon: User,
-    label: "Account",
+    label: "Orders",
   },
 ]
 
