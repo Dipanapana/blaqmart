@@ -37,6 +37,10 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "Blaqmart" }],
   creator: "Blaqmart",
+  icons: {
+    icon: "/images/logo.png",
+    apple: "/images/logo.png",
+  },
   openGraph: {
     title: "Blaqmart - Quality Products Delivered",
     description:
@@ -45,6 +49,14 @@ export const metadata: Metadata = {
     siteName: "Blaqmart",
     locale: "en_ZA",
     type: "website",
+    images: [
+      {
+        url: "/images/logo.png",
+        width: 1200,
+        height: 630,
+        alt: "Blaqmart Stationery",
+      },
+    ],
   },
   robots: {
     index: true,

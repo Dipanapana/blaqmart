@@ -178,6 +178,7 @@ export default function CheckoutPage() {
     handleSubmit,
     watch,
     setValue,
+    getValues,
     trigger,
     formState: { errors },
   } = useForm<CheckoutForm>({
@@ -255,19 +256,20 @@ export default function CheckoutPage() {
 
     // Smart defaults for faster checkout
     // Default town to Warrenton (most common)
-    if (!watch("town")) {
+    const currentValues = getValues()
+    if (!currentValues.town) {
       setValue("town", "Warrenton")
       setValue("city", "Warrenton")
     }
 
     // Default to today + morning slot for quick checkout
-    if (!watch("deliveryDate") && availableDates.length > 0) {
+    if (!currentValues.deliveryDate && availableDates.length > 0) {
       setValue("deliveryDate", availableDates[0].value)
     }
-    if (!watch("deliverySlot")) {
+    if (!currentValues.deliverySlot) {
       setValue("deliverySlot", "morning")
     }
-  }, [session, setValue, watch, availableDates])
+  }, [session, setValue, getValues, availableDates])
 
   const handleStepChange = async (nextStep: number) => {
     // Validate current step before proceeding

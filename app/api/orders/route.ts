@@ -39,8 +39,8 @@ const orderSchema = z.object({
   // Delivery options (optional for school collection)
   deliveryDate: z.string().optional(),
   deliverySlot: z.string().optional(),
-  deliveryNotes: z.string().optional(),
-  giftMessage: z.string().optional(),
+  deliveryNotes: z.string().nullish(),
+  giftMessage: z.string().nullish(),
 
   // Guest checkout
   guestEmail: z.string().email().optional(),
@@ -159,13 +159,24 @@ export async function POST(request: NextRequest) {
       paymentProvider = "COD"
     }
 
+    // Verify customer exists in database if session present
+    let customerId: string | null = null
+    if (session?.user?.id) {
+      const customer = await db.user.findUnique({
+        where: { id: session.user.id },
+      })
+      if (customer) {
+        customerId = customer.id
+      }
+    }
+
     // Create order
     const order = await db.order.create({
       data: {
         orderNumber: generateOrderNumber(),
-        customerId: session?.user?.id,
+        customerId,
         supplierId: supplier.id,
-        guestEmail: data.guestEmail,
+        guestEmail: data.guestEmail || session?.user?.email,
         guestPhone: data.guestPhone,
 
         // Delivery type and school collection
