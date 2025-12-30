@@ -12,7 +12,7 @@ import {
   LogOut,
   Package,
   Settings,
-  Sparkles,
+  School,
 } from "lucide-react"
 import { Logo } from "@/components/shared/logo"
 import { Button } from "@/components/ui/button"
@@ -52,10 +52,10 @@ export function Header() {
   }, [])
 
   const navLinks = [
+    { href: "/schools", label: "Schools", accent: true },
     { href: "/products", label: "Products" },
     { href: "/bundles", label: "Bundles" },
     { href: "/categories", label: "Categories" },
-    { href: "/#shop-by-grade", label: "Shop by Grade", accent: true },
   ]
 
   return (
@@ -129,7 +129,7 @@ export function Header() {
                   }`}
                 >
                   {link.accent && (
-                    <Sparkles className="inline-block w-3.5 h-3.5 mr-1 mb-0.5" />
+                    <School className="inline-block w-3.5 h-3.5 mr-1 mb-0.5" />
                   )}
                   {link.label}
                   {/* Animated underline */}
@@ -319,7 +319,7 @@ export function Header() {
                       }`}
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
-                      {link.accent && <Sparkles className="w-4 h-4 mr-2" />}
+                      {link.accent && <School className="w-4 h-4 mr-2" />}
                       {link.label}
                     </Link>
                   </motion.div>

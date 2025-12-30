@@ -70,8 +70,12 @@ export default async function SchoolStationeryPage({
     })(),
   }))
 
-  // Group stationery items by grade
-  const stationeryByGrade = school.schoolStationeryItems.reduce((acc, item) => {
+  // Group stationery items by grade with serialized prices
+  type SerializedItem = Omit<typeof school.schoolStationeryItems[0], 'product'> & {
+    product: Omit<typeof school.schoolStationeryItems[0]['product'], 'price'> & { price: number }
+  }
+
+  const stationeryByGrade = school.schoolStationeryItems.reduce<Record<string, SerializedItem[]>>((acc, item) => {
     const gradeId = item.gradeId
     if (!acc[gradeId]) {
       acc[gradeId] = []
@@ -84,7 +88,7 @@ export default async function SchoolStationeryPage({
       },
     })
     return acc
-  }, {} as Record<string, typeof school.schoolStationeryItems>)
+  }, {})
 
   return (
     <div>

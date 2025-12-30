@@ -4,7 +4,7 @@ import { MobileHomepageWrapper } from "@/components/storefront/mobile-homepage-w
 export const dynamic = 'force-dynamic'
 
 async function getHomePageData() {
-  const [grades, categories, featuredProducts, stationeryPacks] = await Promise.all([
+  const [grades, categories, featuredProducts, stationeryPacks, schools] = await Promise.all([
     db.grade.findMany({
       where: { isActive: true },
       orderBy: { sortOrder: "asc" },
@@ -34,13 +34,26 @@ async function getHomePageData() {
       },
       orderBy: { sortOrder: "asc" },
     }),
+    db.school.findMany({
+      where: { isActive: true },
+      include: {
+        grades: {
+          include: { grade: true },
+          orderBy: { grade: { sortOrder: "asc" } },
+        },
+      },
+      orderBy: [
+        { schoolType: "asc" },
+        { name: "asc" },
+      ],
+    }),
   ])
 
-  return { grades, categories, featuredProducts, stationeryPacks }
+  return { grades, categories, featuredProducts, stationeryPacks, schools }
 }
 
 export default async function HomePage() {
-  const { grades, categories, featuredProducts, stationeryPacks } =
+  const { grades, featuredProducts, stationeryPacks, schools } =
     await getHomePageData()
 
   // Transform data for client component - only pass serializable fields
@@ -83,11 +96,26 @@ export default async function HomePage() {
     isFeatured: pack.isFeatured,
   }))
 
+  const transformedSchools = schools.map((school) => ({
+    id: school.id,
+    name: school.name,
+    slug: school.slug,
+    town: school.town,
+    schoolType: school.schoolType,
+    isPartner: school.isPartner,
+    grades: school.grades.map((sg) => ({
+      id: sg.grade.id,
+      name: sg.grade.name,
+      slug: sg.grade.slug,
+    })),
+  }))
+
   return (
     <MobileHomepageWrapper
       grades={grades}
       transformedPacks={transformedPacks}
       transformedProducts={transformedProducts}
+      schools={transformedSchools}
     />
   )
 }

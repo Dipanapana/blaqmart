@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, Grid3X3, Gift, User } from "lucide-react"
+import { Home, School, Gift, User } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navItems = [
@@ -12,9 +12,9 @@ const navItems = [
     label: "Home",
   },
   {
-    href: "/categories",
-    icon: Grid3X3,
-    label: "Categories",
+    href: "/schools",
+    icon: School,
+    label: "Schools",
   },
   {
     href: "/hamper-builder",
