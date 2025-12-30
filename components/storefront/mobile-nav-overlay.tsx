@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { X, ChevronRight, Phone, Package, BookOpen, School, Info, HelpCircle, Truck } from 'lucide-react'
+import { X, ChevronRight, Phone, Package, BookOpen, School, HelpCircle, Truck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -90,26 +90,19 @@ export function MobileNavOverlay({ isOpen, onClose, grades }: MobileNavOverlayPr
 
                                 <hr className="border-gray-100" />
 
-                                {/* Support Links */}
+                                {/* Help & Account */}
                                 <div className="space-y-1">
-                                    <Link href="/about" onClick={onClose} className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 group">
+                                    <Link href="/orders" onClick={onClose} className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 group">
                                         <div className="flex items-center gap-3">
-                                            <Info className="h-5 w-5 text-gray-500 group-hover:text-primary" />
-                                            <span className="font-medium text-gray-900">About Us</span>
+                                            <Truck className="h-5 w-5 text-gray-500 group-hover:text-primary" />
+                                            <span className="font-medium text-gray-900">My Orders</span>
                                         </div>
                                         <ChevronRight className="h-4 w-4 text-gray-300" />
                                     </Link>
                                     <Link href="/contact" onClick={onClose} className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 group">
                                         <div className="flex items-center gap-3">
                                             <HelpCircle className="h-5 w-5 text-gray-500 group-hover:text-primary" />
-                                            <span className="font-medium text-gray-900">Contact Support</span>
-                                        </div>
-                                        <ChevronRight className="h-4 w-4 text-gray-300" />
-                                    </Link>
-                                    <Link href="/track-order" onClick={onClose} className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 group">
-                                        <div className="flex items-center gap-3">
-                                            <Truck className="h-5 w-5 text-gray-500 group-hover:text-primary" />
-                                            <span className="font-medium text-gray-900">Track Order</span>
+                                            <span className="font-medium text-gray-900">Contact Us</span>
                                         </div>
                                         <ChevronRight className="h-4 w-4 text-gray-300" />
                                     </Link>

@@ -12,6 +12,7 @@ import { TrustBar } from "@/components/storefront/trust-bar"
 import { ProductGrid } from "@/components/storefront/product-grid"
 import { MobileNavOverlay } from "@/components/storefront/mobile-nav-overlay"
 import { StickyCartSummary } from "@/components/storefront/sticky-cart-summary"
+import { SearchModal } from "@/components/storefront/search-modal"
 import { Badge } from "@/components/ui/badge"
 
 interface TransformedSchool {
@@ -38,6 +39,7 @@ export function MobileHomepageWrapper({
     schools = []
 }: MobileHomepageWrapperProps) {
     const [isMenuOpen, setIsMenuOpen] = useState(false)
+    const [isSearchOpen, setIsSearchOpen] = useState(false)
 
     // Group schools by type
     const primarySchools = schools.filter(s => s.schoolType === "Primary")
@@ -46,7 +48,10 @@ export function MobileHomepageWrapper({
 
     return (
         <div className="min-h-screen bg-white pb-20">
-            <MobileHeader onMenuClick={() => setIsMenuOpen(true)} />
+            <MobileHeader
+                onMenuClick={() => setIsMenuOpen(true)}
+                onSearchClick={() => setIsSearchOpen(true)}
+            />
 
             <main className="pt-14">
                 <HeroCarousel />
@@ -142,6 +147,11 @@ export function MobileHomepageWrapper({
                 isOpen={isMenuOpen}
                 onClose={() => setIsMenuOpen(false)}
                 grades={grades}
+            />
+
+            <SearchModal
+                isOpen={isSearchOpen}
+                onClose={() => setIsSearchOpen(false)}
             />
 
             <StickyCartSummary />

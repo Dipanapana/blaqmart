@@ -6,6 +6,7 @@ import { z } from "zod"
 import logger from "@/lib/logger"
 import { handleApiError } from "@/lib/api-error"
 import { createYocoCheckout, randToCents, getYocoUrls } from "@/lib/yoco"
+import { sendOrderConfirmation } from "@/lib/email"
 
 // Updated schema to support both home delivery and school collection
 const orderSchema = z.object({
@@ -263,6 +264,41 @@ export async function POST(request: NextRequest) {
       deliveryType,
       schoolId: order.schoolId,
     })
+
+    // Send order confirmation email for COD orders (Yoco emails sent after payment)
+    if (data.paymentMethod === "cod") {
+      const customerEmail = data.guestEmail || session?.user?.email
+      const customerName = isSchoolCollection
+        ? (data.collectorName || "Customer")
+        : (data.shippingAddress?.recipientName || "Customer")
+
+      if (customerEmail) {
+        sendOrderConfirmation({
+          orderNumber: order.orderNumber,
+          customerEmail,
+          customerName,
+          items: orderItems.map(item => ({
+            name: item.productName,
+            quantity: item.quantity,
+            price: item.unitPrice,
+          })),
+          subtotal,
+          deliveryFee,
+          total,
+          deliveryAddress: !isSchoolCollection && data.shippingAddress ? {
+            recipientName: data.shippingAddress.recipientName,
+            streetAddress: data.shippingAddress.streetAddress,
+            city: data.shippingAddress.city,
+            province: data.shippingAddress.province,
+          } : undefined,
+          schoolName: school?.name,
+          paymentMethod: "cod",
+        }).catch(err => {
+          // Log but don't fail the order
+          logger.error("Email", err as Error, { orderId: order.id })
+        })
+      }
+    }
 
     // Handle payment redirect for Yoco
     let paymentRedirectUrl: string | null = null

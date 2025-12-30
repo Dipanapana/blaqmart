@@ -3,13 +3,14 @@ import Image from "next/image"
 
 interface LogoProps {
   className?: string
-  size?: "sm" | "md" | "lg"
+  size?: "xs" | "sm" | "md" | "lg"
 }
 
 export function Logo({ className = "", size = "md" }: LogoProps) {
   const sizes = {
-    sm: { height: 32, width: 120 },
-    md: { height: 40, width: 150 },
+    xs: { height: 28, width: 100 },
+    sm: { height: 32, width: 115 },
+    md: { height: 36, width: 130 },
     lg: { height: 48, width: 180 },
   }
 

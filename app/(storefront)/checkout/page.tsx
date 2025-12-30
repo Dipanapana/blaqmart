@@ -114,12 +114,6 @@ const checkoutSchema = z.object({
     if (!data.town || data.town.length < 2) {
       ctx.addIssue({ code: "custom", message: "Please select a town", path: ["town"] })
     }
-    if (!data.deliveryDate) {
-      ctx.addIssue({ code: "custom", message: "Please select a delivery date", path: ["deliveryDate"] })
-    }
-    if (!data.deliverySlot) {
-      ctx.addIssue({ code: "custom", message: "Please select a delivery time", path: ["deliverySlot"] })
-    }
   }
 })
 
@@ -131,11 +125,6 @@ const steps = [
   { id: 2, name: "Payment", icon: CreditCard },
 ]
 
-const deliverySlots = [
-  { id: "morning", label: "Morning (09:00 - 12:00)" },
-  { id: "afternoon", label: "Afternoon (12:00 - 15:00)" },
-  { id: "evening", label: "Evening (15:00 - 18:00)" },
-]
 
 // Delivery areas - Northern Cape & Free State
 const deliveryTowns = [
@@ -231,20 +220,6 @@ export default function CheckoutPage() {
     }
   }, [deliveryMethod, selectedTown, isCodAvailable, setValue, watch])
 
-  // Generate available dates (today + next 7 days)
-  const availableDates = Array.from({ length: 7 }, (_, i) => {
-    const date = new Date()
-    date.setDate(date.getDate() + i)
-    return {
-      value: date.toISOString().split("T")[0],
-      label: date.toLocaleDateString("en-ZA", {
-        weekday: "short",
-        day: "numeric",
-        month: "short",
-      }),
-      isToday: i === 0,
-    }
-  })
 
   // Pre-fill user data if logged in + smart defaults
   useEffect(() => {
@@ -261,15 +236,7 @@ export default function CheckoutPage() {
       setValue("town", "Warrenton")
       setValue("city", "Warrenton")
     }
-
-    // Default to today + morning slot for quick checkout
-    if (!currentValues.deliveryDate && availableDates.length > 0) {
-      setValue("deliveryDate", availableDates[0].value)
-    }
-    if (!currentValues.deliverySlot) {
-      setValue("deliverySlot", "morning")
-    }
-  }, [session, setValue, getValues, availableDates])
+  }, [session, setValue, getValues])
 
   const handleStepChange = async (nextStep: number) => {
     // Validate current step before proceeding
@@ -289,7 +256,7 @@ export default function CheckoutPage() {
       if (deliveryMethod === "school") {
         return ["schoolId", "collectorName", "collectorPhone"]
       }
-      return ["recipientName", "streetAddress", "town", "deliveryDate", "deliverySlot"]
+      return ["recipientName", "streetAddress", "town"]
     }
     return ["paymentMethod", "termsAccepted"]
   }
@@ -1029,69 +996,19 @@ export default function CheckoutPage() {
 
                           <Separator />
 
-                          {/* Delivery Date & Time */}
-                          <motion.div variants={fadeInUp} className="space-y-4">
-                            <Label>Delivery Date</Label>
-                            <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 snap-x no-scrollbar md:mx-0 md:px-0 md:grid md:grid-cols-7 md:gap-2 md:overflow-visible">
-                              {availableDates.map((date) => (
-                                <motion.button
-                                  key={date.value}
-                                  type="button"
-                                  whileTap={{ scale: 0.95 }}
-                                  onClick={() => setValue("deliveryDate", date.value)}
-                                  className={`snap-start flex-shrink-0 w-20 md:w-auto rounded-xl border-2 p-3 text-center transition-all active:scale-95 ${watch("deliveryDate") === date.value
-                                      ? "border-primary bg-primary/10 shadow-md"
-                                      : "border-gray-200 active:border-primary/40"
-                                    }`}
-                                >
-                                  <p className="text-xs text-muted-foreground">
-                                    {date.isToday ? "Today" : date.label.split(" ")[0]}
+                          {/* Delivery Timeframe */}
+                          <motion.div variants={fadeInUp}>
+                            <div className="rounded-xl bg-blue-50 border border-blue-200 p-4">
+                              <div className="flex items-center gap-3">
+                                <Truck className="h-5 w-5 text-blue-600" />
+                                <div>
+                                  <p className="font-medium text-blue-900">Delivery Time</p>
+                                  <p className="text-sm text-blue-700">
+                                    Orders are delivered within 1-5 business days
                                   </p>
-                                  <p className="text-xl md:text-base font-bold">
-                                    {date.label.split(" ")[1]}
-                                  </p>
-                                  <p className="text-xs">
-                                    {date.label.split(" ")[2]}
-                                  </p>
-                                </motion.button>
-                              ))}
+                                </div>
+                              </div>
                             </div>
-                            {errors.deliveryDate && (
-                              <p className="text-sm text-destructive">
-                                {errors.deliveryDate.message}
-                              </p>
-                            )}
-                          </motion.div>
-
-                          <motion.div variants={fadeInUp} className="space-y-4">
-                            <Label>Delivery Time</Label>
-                            <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 no-scrollbar sm:mx-0 sm:px-0 sm:grid sm:grid-cols-3 sm:gap-3 sm:overflow-visible">
-                              {deliverySlots.map((slot) => (
-                                <motion.button
-                                  key={slot.id}
-                                  type="button"
-                                  whileTap={{ scale: 0.95 }}
-                                  onClick={() => setValue("deliverySlot", slot.id)}
-                                  className={`flex-shrink-0 whitespace-nowrap rounded-full sm:rounded-xl border-2 px-5 py-3 sm:p-4 text-sm sm:text-base font-medium transition-all active:scale-95 ${watch("deliverySlot") === slot.id
-                                      ? "border-primary bg-primary text-primary-foreground shadow-md"
-                                      : "border-gray-200 active:border-primary/40"
-                                    }`}
-                                >
-                                  <span className="sm:hidden">{slot.label.split(" ")[0]}</span>
-                                  <span className="hidden sm:inline">{slot.label}</span>
-                                </motion.button>
-                              ))}
-                            </div>
-                            {watch("deliverySlot") && (
-                              <p className="text-sm text-muted-foreground sm:hidden">
-                                {deliverySlots.find(s => s.id === watch("deliverySlot"))?.label}
-                              </p>
-                            )}
-                            {errors.deliverySlot && (
-                              <p className="text-sm text-destructive">
-                                {errors.deliverySlot.message}
-                              </p>
-                            )}
                           </motion.div>
 
                           <motion.div variants={fadeInUp} className="space-y-2">
@@ -1174,28 +1091,25 @@ export default function CheckoutPage() {
                             </div>
                           </motion.button>
 
-                          {/* PayFast */}
-                          <motion.button
-                            type="button"
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            data-testid="payment-payfast"
-                            onClick={() => setValue("paymentMethod", "payfast")}
-                            className={`rounded-xl border-2 p-4 text-left transition-all ${watch("paymentMethod") === "payfast"
-                                ? "border-primary bg-primary/5 shadow-lg"
-                                : "border-gray-200 hover:border-primary/40"
-                              }`}
+                          {/* PayFast - Coming Soon */}
+                          <div
+                            className="rounded-xl border-2 border-dashed p-4 text-left opacity-60 cursor-not-allowed"
                           >
                             <div className="flex items-start justify-between">
                               <div>
-                                <p className="font-medium">PayFast</p>
+                                <p className="font-medium flex items-center gap-2">
+                                  PayFast
+                                  <span className="text-[10px] bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded-full font-bold">
+                                    COMING SOON
+                                  </span>
+                                </p>
                                 <p className="mt-1 text-xs text-muted-foreground">
                                   Card, EFT, or Instant EFT
                                 </p>
                               </div>
                               <CreditCard className="h-5 w-5 text-muted-foreground" />
                             </div>
-                          </motion.button>
+                          </div>
 
                           {/* COD - Only for home delivery to local areas */}
                           {isCodAvailable ? (

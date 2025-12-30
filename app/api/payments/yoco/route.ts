@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { parseYocoWebhook, YocoWebhookPayload } from '@/lib/yoco'
 import logger from '@/lib/logger'
 import { handleApiError, ApiError } from '@/lib/api-error'
+import { sendOrderConfirmation } from '@/lib/email'
 
 /**
  * Yoco Payment Webhook Handler
@@ -106,7 +107,47 @@ async function handlePaymentSuccess(webhook: YocoWebhookPayload) {
 
   logger.order('Payment confirmed', orderId, { provider: 'Yoco' })
 
-  // TODO: Send confirmation email and SMS
+  // Send confirmation email
+  const order = await db.order.findUnique({
+    where: { id: orderId },
+    include: {
+      items: true,
+      school: true,
+      customer: true,
+    },
+  })
+
+  if (order) {
+    const customerEmail = order.guestEmail || order.customer?.email
+    const customerName = order.shippingName || 'Customer'
+    const isSchoolCollection = order.deliveryType === 'SCHOOL_COLLECTION'
+
+    if (customerEmail) {
+      sendOrderConfirmation({
+        orderNumber: order.orderNumber,
+        customerEmail,
+        customerName,
+        items: order.items.map(item => ({
+          name: item.productName,
+          quantity: item.quantity,
+          price: Number(item.unitPrice),
+        })),
+        subtotal: Number(order.subtotal),
+        deliveryFee: Number(order.deliveryFee),
+        total: Number(order.total),
+        deliveryAddress: !isSchoolCollection ? {
+          recipientName: order.shippingName || '',
+          streetAddress: order.shippingAddress || '',
+          city: order.shippingCity || '',
+          province: order.shippingProvince || '',
+        } : undefined,
+        schoolName: order.school?.name,
+        paymentMethod: 'yoco',
+      }).catch(err => {
+        logger.error('Email', err as Error, { orderId: order.id })
+      })
+    }
+  }
 }
 
 /**

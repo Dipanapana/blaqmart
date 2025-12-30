@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blaqmart School Stationery Flyer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            width: 210mm;
+            /* A4 width */
+            height: 297mm;
+            /* A4 height */
+            background-image: url('flyer_bg.png');
+            background-size: cover;
+            background-position: center;
+            color: #1E3A5F;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.90);
+            /* Slightly more opaque */
+            backdrop-filter: blur(10px);
+            margin: 15mm;
+            /* Reduced margin to give more space */
+            border-radius: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            padding: 60px;
+            /* Increased padding */
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo {
+            height: 120px;
+            /* Larger logo */
+            margin-bottom: 20px;
+        }
+
+        .tagline {
+            font-size: 24px;
+            /* Larger tagline */
+            color: #FFB81C;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin-top: 10px;
+        }
+
+        .hero {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .hero-text {
+            font-size: 64px;
+            /* Much larger hero text */
+            font-weight: 900;
+            line-height: 1.1;
+            background: linear-gradient(135deg, #1E3A5F 0%, #2563EB 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -2px;
+        }
+
+        .schools-container {
+            flex: 1;
+            background: white;
+            border-radius: 25px;
+            padding: 40px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+        }
+
+        h2 {
+            font-size: 28px;
+            /* Larger heading */
+            margin-bottom: 30px;
+            border-bottom: 3px solid #F3F4F6;
+            padding-bottom: 15px;
+            color: #1E3A5F;
+            /* Darker color */
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 800;
+            text-align: center;
+        }
+
+        .school-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            flex: 1;
+            gap: 15px;
+        }
+
+        .school-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 25px;
+            /* Larger padding */
+            background: #F8FAFC;
+            border-radius: 12px;
+            border-left: 6px solid #FFB81C;
+            transition: transform 0.2s;
+        }
+
+        .school-name {
+            font-weight: 800;
+            font-size: 20px;
+            /* Larger school name */
+            color: #334155;
+        }
+
+        .school-grade {
+            font-size: 18px;
+            /* Larger grade text */
+            color: #1E3A5F;
+            background: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: 700;
+            border: 2px solid #E2E8F0;
+            min-width: 120px;
+            text-align: center;
+        }
+
+        footer {
+            margin-top: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #1E3A5F;
+            color: white;
+            padding: 30px 40px;
+            border-radius: 25px;
+            box-shadow: 0 10px 30px rgba(30, 58, 95, 0.3);
+        }
+
+        .contact-info {
+            flex: 1;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+            font-size: 24px;
+            /* Larger contact text */
+            font-weight: 600;
+        }
+
+        .contact-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .contact-item svg {
+            width: 32px;
+            height: 32px;
+        }
+
+        .qr-container {
+            background: white;
+            padding: 15px;
+            border-radius: 15px;
+            width: 140px;
+            /* Larger QR code */
+            height: 140px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 30px;
+        }
+
+        .qr-code {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="overlay">
+        <header>
+            <img src="../images/logo.png" alt="Blaqmart Logo" class="logo">
+            <div class="tagline">School Stationery Delivered</div>
+        </header>
+
+        <div class="hero">
+            <div class="hero-text">Your School.</div>
+            <div class="hero-text">Your Grade.</div>
+            <div class="hero-text" style="color: #FFB81C; -webkit-text-fill-color: #FFB81C;">Your Pack.</div>
+        </div>
+
+        <div class="schools-container">
+            <h2>Partner Schools in Warrenton</h2>
+            <ul class="school-list">
+                <li class="school-item">
+                    <span class="school-name">Warrenton Public Primary School</span>
+                    <span class="school-grade">Grade R-7</span>
+                </li>
+                <li class="school-item">
+                    <span class="school-name">Laerskool Warrenton</span>
+                    <span class="school-grade">Grade R-7</span>
+                </li>
+                <li class="school-item">
+                    <span class="school-name">Tlhatlhogang Intermediate School</span>
+                    <span class="school-grade">Grade R-9</span>
+                </li>
+                <li class="school-item">
+                    <span class="school-name">Rolihlahla Intermediate School</span>
+                    <span class="school-grade">Grade R-8</span>
+                </li>
+                <li class="school-item">
+                    <span class="school-name">Hoërskool Warrenton</span>
+                    <span class="school-grade">Grade 8-12</span>
+                </li>
+                <li class="school-item">
+                    <span class="school-name">Mogomotsi Secondary School</span>
+                    <span class="school-grade">Grade 9-12</span>
+                </li>
+                <li class="school-item">
+                    <span class="school-name">Warrenvale Sekondêre Skool</span>
+                    <span class="school-grade">Grade 8-12</span>
+                </li>
+            </ul>
+        </div>
+
+        <footer>
+            <div class="contact-info">
+                <div class="contact-item">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path
+                            d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z">
+                        </path>
+                    </svg>
+                    079 402 2296
+                </div>
+                <div class="contact-item">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="2" y1="12" x2="22" y2="12"></line>
+                        <path
+                            d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z">
+                        </path>
+                    </svg>
+                    www.blaqmart.co.za
+                </div>
+            </div>
+            <div class="qr-container">
+                <img src="qrcode.png" alt="Scan to Shop" class="qr-code">
+            </div>
+        </footer>
+    </div>
+</body>
+
+</html>
