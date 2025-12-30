@@ -5,7 +5,6 @@ import { Menu, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { CartSheet } from '@/components/storefront/cart-sheet'
-import { Logo } from '@/components/shared/logo'
 
 interface MobileHeaderProps {
     onMenuClick: () => void
@@ -36,18 +35,18 @@ export function MobileHeader({ onMenuClick, onSearchClick }: MobileHeaderProps) 
                     variant="ghost"
                     size="icon"
                     onClick={onMenuClick}
-                    className="-ml-2 shrink-0"
+                    className="-ml-2"
                 >
                     <Menu className="h-5 w-5" />
                 </Button>
 
-                {/* Center: Logo (flexbox, not absolute) */}
-                <div className="flex-1 flex justify-center">
-                    <Logo size={isScrolled ? "xs" : "sm"} />
-                </div>
+                {/* Center: Brand Text */}
+                <span className="font-bold text-lg text-primary tracking-tight">
+                    BLAQMART
+                </span>
 
                 {/* Right: Search + Cart */}
-                <div className="flex items-center gap-1 shrink-0">
+                <div className="flex items-center gap-1">
                     <Button
                         variant="ghost"
                         size="icon"
