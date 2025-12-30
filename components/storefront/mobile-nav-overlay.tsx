@@ -44,25 +44,6 @@ export function MobileNavOverlay({ isOpen, onClose, grades }: MobileNavOverlayPr
 
                             {/* Content */}
                             <div className="flex-1 p-4 space-y-6">
-                                {/* Shop by Grade */}
-                                <div>
-                                    <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Shop by Grade</h3>
-                                    <div className="grid grid-cols-4 gap-2">
-                                        {grades.map((grade) => (
-                                            <Link
-                                                key={grade.id}
-                                                href={`/grades/${grade.slug}`}
-                                                onClick={onClose}
-                                                className="flex items-center justify-center h-12 rounded-lg bg-gray-50 hover:bg-primary/5 hover:text-primary border border-gray-100 transition-colors font-medium text-sm"
-                                            >
-                                                {grade.name.replace('Grade ', '')}
-                                            </Link>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <hr className="border-gray-100" />
-
                                 {/* Main Links */}
                                 <div className="space-y-1">
                                     <Link href="/bundles" onClick={onClose} className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 group">
