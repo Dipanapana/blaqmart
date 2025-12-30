@@ -12,6 +12,7 @@ import {
   Menu,
   X,
   Tag,
+  School,
 } from "lucide-react"
 import { useState } from "react"
 import { Logo } from "@/components/shared/logo"
@@ -20,6 +21,7 @@ import { cn } from "@/lib/utils"
 
 const navItems = [
   { href: "/admin", icon: LayoutDashboard, label: "Dashboard" },
+  { href: "/admin/schools", icon: School, label: "Schools" },
   { href: "/admin/products", icon: Package, label: "Products" },
   { href: "/admin/categories", icon: Tag, label: "Categories" },
   { href: "/admin/orders", icon: ShoppingCart, label: "Orders" },
