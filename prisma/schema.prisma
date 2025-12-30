@@ -141,8 +141,10 @@ model Grade {
   sortOrder   Int     @default(0)
   isActive    Boolean @default(true)
 
-  stationeryPacks StationeryPack[]
-  products        ProductGrade[]
+  stationeryPacks        StationeryPack[]
+  products               ProductGrade[]
+  schools                SchoolGrade[]
+  schoolStationeryItems  SchoolStationeryItem[]
 }
 
 model ProductGrade {
@@ -167,16 +169,62 @@ model School {
   contactEmail String?
   contactPhone String?
   logo         String?
+  description  String?
+  schoolType   String? // "Primary", "Intermediate", "Secondary"
   isActive     Boolean @default(true)
   isPartner    Boolean @default(false)
 
-  stationeryPacks StationeryPack[]
-  orders          Order[]
+  stationeryPacks       StationeryPack[]
+  orders                Order[]
+  grades                SchoolGrade[]
+  schoolStationeryItems SchoolStationeryItem[]
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
   @@index([town])
   @@index([isPartner])
+  @@index([schoolType])
+}
+
+// ============== SCHOOL-GRADE JUNCTION ==============
+
+model SchoolGrade {
+  id        String   @id @default(cuid())
+  schoolId  String
+  gradeId   String
+  school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  grade     Grade    @relation(fields: [gradeId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([schoolId, gradeId])
+  @@index([schoolId])
+  @@index([gradeId])
+}
+
+// ============== SCHOOL STATIONERY ITEMS (Per-School Per-Grade Lists) ==============
+
+model SchoolStationeryItem {
+  id         String   @id @default(cuid())
+  schoolId   String
+  gradeId    String
+  productId  String
+  quantity   Int      @default(1)
+  isRequired Boolean  @default(true)
+  notes      String?
+  sortOrder  Int      @default(0)
+
+  school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  grade     Grade    @relation(fields: [gradeId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([schoolId, gradeId, productId])
+  @@index([schoolId])
+  @@index([gradeId])
+  @@index([productId])
 }
 
 // ============== PRODUCTS ==============
@@ -223,12 +271,13 @@ model Product {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  cartItems           CartItem[]
-  orderItems          OrderItem[]
-  hamperItems         HamperPresetItem[]
-  variants            ProductVariant[]
-  grades              ProductGrade[]
-  stationeryPackItems StationeryPackItem[]
+  cartItems              CartItem[]
+  orderItems             OrderItem[]
+  hamperItems            HamperPresetItem[]
+  variants               ProductVariant[]
+  grades                 ProductGrade[]
+  stationeryPackItems    StationeryPackItem[]
+  schoolStationeryItems  SchoolStationeryItem[]
 
   @@index([supplierId])
   @@index([categoryId])

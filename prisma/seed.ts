@@ -1191,24 +1191,120 @@ async function main() {
   }
   console.log("✓ Created delivery zones with COD support")
 
-  // Create schools
-  const schools = [
-    { name: "Warrenton Primary School", slug: "warrenton-primary", town: "Warrenton", isPartner: true },
-    { name: "Warrenton High School", slug: "warrenton-high", town: "Warrenton", isPartner: true },
-    { name: "Jan Kempdorp Primary School", slug: "jan-kempdorp-primary", town: "Jan Kempdorp", isPartner: true },
-    { name: "Hartswater Primary School", slug: "hartswater-primary", town: "Hartswater", isPartner: false },
-    { name: "Christiana Primary School", slug: "christiana-primary", town: "Christiana", isPartner: false },
-    { name: "Floors Combined School", slug: "floors-combined", town: "Warrenton", isPartner: false },
+  // Create Warrenton schools with grades
+  const schoolsData = [
+    {
+      name: "Warrenton Public Primary School",
+      slug: "warrenton-public-primary",
+      town: "Warrenton",
+      schoolType: "Primary",
+      isPartner: true,
+      isActive: true,
+      description: "Public primary school serving the Warrenton community",
+      gradeRange: ["grade-r", "grade-1", "grade-2", "grade-3", "grade-4", "grade-5", "grade-6", "grade-7"],
+    },
+    {
+      name: "Laerskool Warrenton",
+      slug: "laerskool-warrenton",
+      town: "Warrenton",
+      schoolType: "Primary",
+      isPartner: true,
+      isActive: true,
+      description: "Afrikaans primary school in Warrenton",
+      gradeRange: ["grade-r", "grade-1", "grade-2", "grade-3", "grade-4", "grade-5", "grade-6", "grade-7"],
+    },
+    {
+      name: "Tlhatlhogang Intermediate School",
+      slug: "tlhatlhogang-intermediate",
+      town: "Warrenton",
+      schoolType: "Intermediate",
+      isPartner: true,
+      isActive: true,
+      description: "Intermediate school offering Grade R to Grade 9",
+      gradeRange: ["grade-r", "grade-1", "grade-2", "grade-3", "grade-4", "grade-5", "grade-6", "grade-7", "grade-8", "grade-9"],
+    },
+    {
+      name: "Rolihlahla Intermediate School",
+      slug: "rolihlahla-intermediate",
+      town: "Warrenton",
+      schoolType: "Intermediate",
+      isPartner: true,
+      isActive: true,
+      description: "Intermediate school serving the local community",
+      gradeRange: ["grade-r", "grade-1", "grade-2", "grade-3", "grade-4", "grade-5", "grade-6", "grade-7", "grade-8"],
+    },
+    {
+      name: "Hoerskool Warrenton",
+      slug: "hoerskool-warrenton",
+      town: "Warrenton",
+      schoolType: "Secondary",
+      isPartner: true,
+      isActive: true,
+      description: "Afrikaans secondary school in Warrenton",
+      gradeRange: ["grade-8", "grade-9", "grade-10", "grade-11", "grade-12"],
+    },
+    {
+      name: "Mogomotsi Secondary School",
+      slug: "mogomotsi-secondary",
+      town: "Warrenton",
+      schoolType: "Secondary",
+      isPartner: true,
+      isActive: true,
+      description: "Secondary school offering Grade 9 to Matric",
+      gradeRange: ["grade-9", "grade-10", "grade-11", "grade-12"],
+    },
+    {
+      name: "Warrenvale Sekondere Skool",
+      slug: "warrenvale-secondary",
+      town: "Warrenton",
+      schoolType: "Secondary",
+      isPartner: true,
+      isActive: true,
+      description: "Secondary school in Warrenton",
+      gradeRange: ["grade-8", "grade-9", "grade-10", "grade-11", "grade-12"],
+    },
   ]
 
-  for (const school of schools) {
-    await prisma.school.upsert({
-      where: { slug: school.slug },
-      update: {},
-      create: school,
+  // Delete existing school grades to avoid duplicates
+  await prisma.schoolGrade.deleteMany({})
+
+  for (const schoolData of schoolsData) {
+    const { gradeRange, ...schoolInfo } = schoolData
+
+    const school = await prisma.school.upsert({
+      where: { slug: schoolInfo.slug },
+      update: {
+        name: schoolInfo.name,
+        town: schoolInfo.town,
+        schoolType: schoolInfo.schoolType,
+        description: schoolInfo.description,
+        isPartner: schoolInfo.isPartner,
+        isActive: schoolInfo.isActive,
+      },
+      create: schoolInfo,
     })
+
+    // Create grade associations
+    for (const gradeSlug of gradeRange) {
+      const grade = await prisma.grade.findUnique({ where: { slug: gradeSlug } })
+      if (grade) {
+        await prisma.schoolGrade.upsert({
+          where: {
+            schoolId_gradeId: {
+              schoolId: school.id,
+              gradeId: grade.id,
+            },
+          },
+          update: {},
+          create: {
+            schoolId: school.id,
+            gradeId: grade.id,
+          },
+        })
+      }
+    }
   }
-  console.log("✓ Created schools")
+  console.log("✓ Created 7 Warrenton schools with grade assignments")
 
   // Create store settings
   await prisma.storeSetting.upsert({
@@ -1218,8 +1314,8 @@ async function main() {
         name: "Blaqmart Stationery",
         tagline: "Quality School Stationery at Unbeatable Prices",
         email: "orders@blaqmart.co.za",
-        phone: "+27 53 497 0000",
-        whatsapp: "+27 72 123 4567",
+        phone: "+27 79 402 2296",
+        whatsapp: "+27794022296",
         address: "Warrenton, Northern Cape, South Africa",
       },
     },
@@ -1229,8 +1325,8 @@ async function main() {
         name: "Blaqmart Stationery",
         tagline: "Quality School Stationery at Unbeatable Prices",
         email: "orders@blaqmart.co.za",
-        phone: "+27 53 497 0000",
-        whatsapp: "+27 72 123 4567",
+        phone: "+27 79 402 2296",
+        whatsapp: "+27794022296",
         address: "Warrenton, Northern Cape, South Africa",
       },
     },
@@ -1264,7 +1360,8 @@ async function main() {
   console.log("   - 40+ SA stationery products")
   console.log("   - 5 grade-specific stationery packs")
   console.log("   - 5 delivery zones (2 with COD)")
-  console.log("   - 6 partner schools")
+  console.log("   - 7 Warrenton schools with grade assignments")
+  console.log("   - WhatsApp: 0794022296")
 }
 
 main()
