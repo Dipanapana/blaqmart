@@ -64,7 +64,7 @@ export function Header() {
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className={`sticky top-0 z-50 w-full border-b transition-all duration-300 ${
+        className={`hidden md:block sticky top-0 z-50 w-full border-b transition-all duration-300 ${
           isScrolled
             ? "bg-white/95 backdrop-blur-md shadow-md py-2"
             : "bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-0"

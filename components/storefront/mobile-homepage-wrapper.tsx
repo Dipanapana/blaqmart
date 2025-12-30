@@ -1,18 +1,14 @@
 'use client'
 
-import { useState } from "react"
 import Link from "next/link"
 import { School, ChevronRight, GraduationCap } from "lucide-react"
-import { MobileHeader } from "@/components/storefront/mobile-header"
 import { GradeStories } from "@/components/storefront/grade-stories"
 import { HeroCarousel } from "@/components/storefront/hero-carousel"
 import { QuickActions } from "@/components/storefront/quick-actions"
 import { FeaturedPacks } from "@/components/storefront/featured-packs"
 import { TrustBar } from "@/components/storefront/trust-bar"
 import { ProductGrid } from "@/components/storefront/product-grid"
-import { MobileNavOverlay } from "@/components/storefront/mobile-nav-overlay"
 import { StickyCartSummary } from "@/components/storefront/sticky-cart-summary"
-import { SearchModal } from "@/components/storefront/search-modal"
 import { Badge } from "@/components/ui/badge"
 
 interface TransformedSchool {
@@ -38,9 +34,6 @@ export function MobileHomepageWrapper({
     transformedProducts,
     schools = []
 }: MobileHomepageWrapperProps) {
-    const [isMenuOpen, setIsMenuOpen] = useState(false)
-    const [isSearchOpen, setIsSearchOpen] = useState(false)
-
     // Group schools by type
     const primarySchools = schools.filter(s => s.schoolType === "Primary")
     const intermediateSchools = schools.filter(s => s.schoolType === "Intermediate")
@@ -48,12 +41,7 @@ export function MobileHomepageWrapper({
 
     return (
         <div className="min-h-screen bg-white pb-20">
-            <MobileHeader
-                onMenuClick={() => setIsMenuOpen(true)}
-                onSearchClick={() => setIsSearchOpen(true)}
-            />
-
-            <main className="pt-14">
+            <main className="pt-14 md:pt-0">
                 <HeroCarousel />
                 <QuickActions />
 
@@ -142,17 +130,6 @@ export function MobileHomepageWrapper({
                 <TrustBar />
                 <ProductGrid initialProducts={transformedProducts} />
             </main>
-
-            <MobileNavOverlay
-                isOpen={isMenuOpen}
-                onClose={() => setIsMenuOpen(false)}
-                grades={grades}
-            />
-
-            <SearchModal
-                isOpen={isSearchOpen}
-                onClose={() => setIsSearchOpen(false)}
-            />
 
             <StickyCartSummary />
         </div>
