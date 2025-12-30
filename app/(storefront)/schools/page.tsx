@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: "Schools | Blaqmart Stationery",
   description: "Browse stationery lists for schools in Warrenton. Find everything your child needs for the school year.",

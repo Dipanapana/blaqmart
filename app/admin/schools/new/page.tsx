@@ -3,6 +3,8 @@ import { ArrowLeft } from "lucide-react"
 import { db } from "@/lib/db"
 import { SchoolForm } from "../school-form"
 
+export const dynamic = 'force-dynamic'
+
 async function getGrades() {
   return db.grade.findMany({
     where: { isActive: true },
