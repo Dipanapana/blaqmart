@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { ArrowLeft, ShoppingCart, Check, Package, Loader2 } from "lucide-react"
+import { ArrowLeft, ShoppingCart, Check, Package, Loader2, Download, Share2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -309,6 +309,37 @@ export default function GradeStationeryPage({
                       totalPrice={selectedTotal}
                       className="w-full"
                     />
+                  </div>
+
+                  {/* PDF Download & Share Section */}
+                  <div className="border-t pt-4 mt-4 space-y-2">
+                    <p className="text-sm text-muted-foreground text-center mb-3">
+                      Print or share this list
+                    </p>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      asChild
+                    >
+                      <a
+                        href={`/api/schools/${data.school.slug}/grades/${data.grade.slug}/pdf`}
+                        download
+                      >
+                        <Download className="mr-2 h-4 w-4" />
+                        Download PDF
+                      </a>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => {
+                        const text = `Check out the ${data.grade.name} stationery list for ${data.school.name}!\n\nTotal: R${data.summary.grandTotal.toFixed(2)}\n\nOrder here: ${window.location.href}`
+                        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`)
+                      }}
+                    >
+                      <Share2 className="mr-2 h-4 w-4" />
+                      Share with Parents
+                    </Button>
                   </div>
                 </div>
               </CardContent>

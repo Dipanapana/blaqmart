@@ -66,6 +66,10 @@ model User {
 
   // Future: supplier and driver relations
   supplier Supplier?
+
+  // Activity logging
+  activityLogs       ActivityLog[]
+  statusHistoryItems OrderStatusHistory[] @relation("StatusChangedBy")
 }
 
 model Address {
@@ -496,9 +500,10 @@ model Order {
   confirmedAt DateTime?
   deliveredAt DateTime?
 
-  items         OrderItem[]
-  payment       Payment?
-  statusHistory OrderStatusHistory[]
+  items            OrderItem[]
+  payment          Payment?
+  statusHistory    OrderStatusHistory[]
+  notificationLogs NotificationLog[]
 
   @@index([customerId])
   @@index([supplierId])
@@ -529,15 +534,62 @@ model OrderItem {
 }
 
 model OrderStatusHistory {
-  id        String      @id @default(cuid())
-  orderId   String
-  order     Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  status    OrderStatus
-  note      String?
-  createdAt DateTime    @default(now())
-  createdBy String? // Admin user ID
+  id          String       @id @default(cuid())
+  orderId     String
+  order       Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  fromStatus  OrderStatus? // Previous status (null for creation)
+  toStatus    OrderStatus  @default(PENDING) // New status (will copy from status for existing rows)
+  status      OrderStatus  // Keep for backwards compatibility
+  note        String?
+  createdAt   DateTime     @default(now())
+  createdBy   String?      // Admin user ID
+  createdByUser User?      @relation("StatusChangedBy", fields: [createdBy], references: [id])
+  notifiedAt  DateTime?    // When customer was notified
 
   @@index([orderId])
+  @@index([createdBy])
+}
+
+// ============== ACTIVITY LOGGING ==============
+
+model ActivityLog {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  action      String   // CREATE, UPDATE, DELETE, STATUS_CHANGE, VIEW, LOGIN, LOGOUT
+  entityType  String   // ORDER, PRODUCT, SCHOOL, CATEGORY, USER, STATIONERY
+  entityId    String   // ID of affected record
+  entityName  String?  // Human-readable name (e.g., "Order #BM-2025-001")
+  details     Json?    // Additional context (old/new values)
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([entityType])
+  @@index([entityId])
+  @@index([createdAt])
+}
+
+// ============== NOTIFICATION LOGGING ==============
+
+model NotificationLog {
+  id          String    @id @default(cuid())
+  orderId     String?
+  order       Order?    @relation(fields: [orderId], references: [id])
+  type        String    // EMAIL, SMS, WHATSAPP
+  recipient   String    // Email address or phone number
+  subject     String?
+  template    String    // Template name used
+  status      String    // SENT, FAILED, PENDING
+  error       String?   // Error message if failed
+  sentAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([orderId])
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
 }
 
 // ============== PAYMENTS ==============

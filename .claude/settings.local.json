@@ -45,7 +45,8 @@
       "Bash(xargs:*)",
       "Bash(cat:*)",
       "Bash(git show:*)",
-      "Bash(set DATABASE_URL=postgresql://postgres:rTyZJHSasGOHstbhPIUWpFxCWLNIMcNI@gondola.proxy.rlwy.net:41684/railway:*)"
+      "Bash(set DATABASE_URL=postgresql://postgres:rTyZJHSasGOHstbhPIUWpFxCWLNIMcNI@gondola.proxy.rlwy.net:41684/railway:*)",
+      "Bash(cd:*)"
     ],
     "deny": [],
     "ask": []

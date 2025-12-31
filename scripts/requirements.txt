@@ -1,0 +1,13 @@
+# Blaqmart Python Utilities
+# Install: pip install -r requirements.txt
+
+# PDF Generation
+reportlab>=4.0.0
+Pillow>=10.0.0
+
+# SMS (optional - choose based on provider)
+# twilio>=8.0.0  # For Twilio SMS
+requests>=2.31.0  # For BulkSMS API
+
+# Utilities
+python-dotenv>=1.0.0

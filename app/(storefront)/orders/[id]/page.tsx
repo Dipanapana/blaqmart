@@ -10,10 +10,13 @@ import {
   Phone,
   ChevronRight,
   ShoppingBag,
+  Download,
+  MessageCircle,
 } from "lucide-react"
 import { db } from "@/lib/db"
 import { formatPrice, formatDate } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 
@@ -330,6 +333,33 @@ export default async function OrderDetailPage({
             </Card>
           )}
 
+          {/* Actions */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Order Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button variant="outline" className="w-full" asChild>
+                <a href={`/api/orders/${order.id}/receipt`} download>
+                  <Download className="mr-2 h-4 w-4" />
+                  Download Receipt
+                </a>
+              </Button>
+              <Button variant="outline" className="w-full" asChild>
+                <a
+                  href={`https://wa.me/27794022296?text=${encodeURIComponent(
+                    `Hi Blaqmart! I have a question about my order #${order.orderNumber}`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <MessageCircle className="mr-2 h-4 w-4" />
+                  WhatsApp Support
+                </a>
+              </Button>
+            </CardContent>
+          </Card>
+
           {/* Need Help */}
           <Card>
             <CardHeader>
@@ -344,7 +374,7 @@ export default async function OrderDetailPage({
                   <strong>Email:</strong> orders@blaqmart.co.za
                 </p>
                 <p>
-                  <strong>Phone:</strong> +27 12 345 6789
+                  <strong>WhatsApp:</strong> 079 402 2296
                 </p>
               </div>
             </CardContent>

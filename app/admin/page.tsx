@@ -3,7 +3,6 @@ import {
   Package,
   ShoppingCart,
   DollarSign,
-  TrendingUp,
   AlertCircle,
   ChevronRight,
 } from "lucide-react"
@@ -11,12 +10,16 @@ import { db } from "@/lib/db"
 import { formatPrice } from "@/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { ActivityFeed } from "@/components/admin/activity-feed"
+import { OrderAlerts } from "@/components/admin/order-alerts"
 
 export const dynamic = 'force-dynamic'
 
 async function getDashboardStats() {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
+
+  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
 
   const [
     todayOrders,
@@ -25,6 +28,8 @@ async function getDashboardStats() {
     lowStockProducts,
     recentOrders,
     totalProducts,
+    recentActivity,
+    staleOrders,
   ] = await Promise.all([
     db.order.count({
       where: { createdAt: { gte: today } },
@@ -54,6 +59,34 @@ async function getDashboardStats() {
       },
     }),
     db.product.count({ where: { isActive: true } }),
+    // Recent activity logs
+    db.activityLog.findMany({
+      take: 10,
+      orderBy: { createdAt: "desc" },
+      include: {
+        user: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
+      },
+    }),
+    // Stale orders (pending > 24 hours)
+    db.order.findMany({
+      where: {
+        status: "PENDING",
+        createdAt: { lt: twentyFourHoursAgo },
+      },
+      orderBy: { createdAt: "asc" },
+      select: {
+        id: true,
+        orderNumber: true,
+        shippingName: true,
+        createdAt: true,
+        total: true,
+      },
+    }),
   ])
 
   return {
@@ -63,6 +96,14 @@ async function getDashboardStats() {
     lowStockProducts,
     recentOrders,
     totalProducts,
+    recentActivity: recentActivity.map((a) => ({
+      ...a,
+      details: a.details as Record<string, unknown> | null,
+    })),
+    staleOrders: staleOrders.map((o) => ({
+      ...o,
+      total: Number(o.total),
+    })),
   }
 }
 
@@ -136,6 +177,15 @@ export default async function AdminDashboard() {
             </p>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Alerts and Activity Grid */}
+      <div className="mb-8 grid gap-4 lg:grid-cols-2">
+        <OrderAlerts
+          staleOrders={stats.staleOrders}
+          unprocessedCount={stats.pendingOrders}
+        />
+        <ActivityFeed activities={stats.recentActivity} />
       </div>
 
       {/* Recent Orders */}
