@@ -197,11 +197,11 @@ export function QuickAddButton({
     if (isAdded) return
 
     addItem({
-      id: productId,
+      productId,
       name: productName,
       price,
-      quantity: 1,
       image: image || "/images/placeholder-product.jpg",
+      stock: 999,
     })
 
     setIsAdded(true)
