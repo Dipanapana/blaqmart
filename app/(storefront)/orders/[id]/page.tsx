@@ -168,35 +168,49 @@ export default async function OrderDetailPage({
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {order.items.map((item) => (
-                  <div key={item.id} className="flex gap-4">
-                    <div className="relative h-20 w-20 overflow-hidden rounded-md bg-muted">
-                      {item.product.images[0] ? (
-                        <Image
-                          src={item.product.images[0]}
-                          alt={item.productName}
-                          fill
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-full items-center justify-center">
-                          <ShoppingBag className="h-8 w-8 text-muted-foreground" />
+                {order.items.map((item) => {
+                  // Safely get the first image - handle null, undefined, string, and array cases
+                  let productImage: string | null = null
+                  if (item.product?.images) {
+                    const images = typeof item.product.images === 'string'
+                      ? JSON.parse(item.product.images)
+                      : item.product.images
+                    if (Array.isArray(images) && images.length > 0 && typeof images[0] === 'string') {
+                      productImage = images[0]
+                    }
+                  }
+
+                  return (
+                    <div key={item.id} className="flex gap-4">
+                      <div className="relative h-20 w-20 overflow-hidden rounded-md bg-muted">
+                        {productImage ? (
+                          <Image
+                            src={productImage}
+                            alt={item.productName}
+                            fill
+                            className="object-cover"
+                            unoptimized={productImage.startsWith('http')}
+                          />
+                        ) : (
+                          <div className="flex h-full items-center justify-center">
+                            <ShoppingBag className="h-8 w-8 text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex flex-1 justify-between">
+                        <div>
+                          <p className="font-medium">{item.productName}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Qty: {item.quantity} × {formatPrice(Number(item.unitPrice))}
+                          </p>
                         </div>
-                      )}
-                    </div>
-                    <div className="flex flex-1 justify-between">
-                      <div>
-                        <p className="font-medium">{item.productName}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Qty: {item.quantity} × {formatPrice(Number(item.unitPrice))}
+                        <p className="font-medium">
+                          {formatPrice(Number(item.totalPrice))}
                         </p>
                       </div>
-                      <p className="font-medium">
-                        {formatPrice(Number(item.totalPrice))}
-                      </p>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
 
               <Separator className="my-4" />
