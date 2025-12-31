@@ -201,8 +201,8 @@ export default function CheckoutPage() {
       try {
         const res = await fetch('/api/schools?partners=true')
         const data = await res.json()
-        if (data.success) {
-          setSchools(data.data)
+        if (data.success && Array.isArray(data.data?.schools)) {
+          setSchools(data.data.schools)
         }
       } catch (error) {
         console.error('Failed to fetch schools:', error)
