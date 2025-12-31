@@ -7,7 +7,7 @@ import { signIn } from "next-auth/react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Loader2 } from "lucide-react"
+import { Loader2, Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -25,6 +25,7 @@ function LoginForm() {
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get("callbackUrl") || "/"
   const [error, setError] = useState<string | null>(null)
+  const [showPassword, setShowPassword] = useState(false)
 
   const {
     register,
@@ -37,17 +38,35 @@ function LoginForm() {
   const onSubmit = async (data: LoginForm) => {
     setError(null)
 
-    const result = await signIn("credentials", {
-      email: data.email,
-      password: data.password,
-      redirect: false,
-    })
+    try {
+      const result = await signIn("credentials", {
+        email: data.email.toLowerCase().trim(),
+        password: data.password,
+        redirect: false,
+      })
 
-    if (result?.error) {
-      setError("Invalid email or password")
-    } else {
-      router.push(callbackUrl)
-      router.refresh()
+      if (result?.error) {
+        console.error("Login error details:", {
+          error: result.error,
+          status: result.status,
+          ok: result.ok,
+          url: result.url,
+        })
+        // Show more specific error for debugging
+        if (result.error === "CredentialsSignin") {
+          setError("Invalid email or password. Please try again.")
+        } else {
+          setError(`Login failed: ${result.error}`)
+        }
+      } else if (result?.ok) {
+        router.push(callbackUrl)
+        router.refresh()
+      } else {
+        setError("Something went wrong. Please try again.")
+      }
+    } catch (err) {
+      console.error("Login exception:", err)
+      setError("Connection error. Please check your internet and try again.")
     }
   }
 
@@ -65,6 +84,7 @@ function LoginForm() {
           id="email"
           type="email"
           placeholder="you@example.com"
+          autoComplete="email"
           {...register("email")}
         />
         {errors.email && (
@@ -73,21 +93,34 @@ function LoginForm() {
       </div>
 
       <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label htmlFor="password">Password</Label>
-          <Link
-            href="/forgot-password"
-            className="text-sm text-primary hover:underline"
+        <Label htmlFor="password">Password</Label>
+        <div className="relative">
+          <Input
+            id="password"
+            type={showPassword ? "text" : "password"}
+            placeholder="Enter your password"
+            autoComplete="current-password"
+            className="pr-10"
+            {...register("password")}
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+            onClick={() => setShowPassword(!showPassword)}
+            tabIndex={-1}
           >
-            Forgot password?
-          </Link>
+            {showPassword ? (
+              <EyeOff className="h-4 w-4 text-muted-foreground" />
+            ) : (
+              <Eye className="h-4 w-4 text-muted-foreground" />
+            )}
+            <span className="sr-only">
+              {showPassword ? "Hide password" : "Show password"}
+            </span>
+          </Button>
         </div>
-        <Input
-          id="password"
-          type="password"
-          placeholder="Enter your password"
-          {...register("password")}
-        />
         {errors.password && (
           <p className="text-sm text-destructive">
             {errors.password.message}
