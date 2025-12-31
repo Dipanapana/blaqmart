@@ -46,13 +46,16 @@ export function OneTapBuy({
     // Add items with stagger effect
     for (let i = 0; i < items.length; i++) {
       const item = items[i]
-      addItem({
-        id: item.productId,
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity,
-        image: item.image || "/images/placeholder-product.jpg",
-      })
+      // Add item multiple times for quantity (cart increments by 1 each call)
+      for (let q = 0; q < item.quantity; q++) {
+        addItem({
+          productId: item.productId,
+          name: item.name,
+          price: item.price,
+          image: item.image || "/images/placeholder-product.jpg",
+          stock: 999,
+        })
+      }
 
       // Small delay for visual feedback
       if (i < items.length - 1) {

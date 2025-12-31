@@ -52,11 +52,11 @@ export function MinimalProductCard({
     if (isAdded) return
 
     addItem({
-      id,
+      productId: id,
       name,
       price,
-      quantity: 1,
       image,
+      stock: stock ?? 999,
     })
 
     setIsAdded(true)
