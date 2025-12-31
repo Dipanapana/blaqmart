@@ -238,6 +238,48 @@ export default function CheckoutPage() {
     }
   }, [session, setValue, getValues])
 
+  // Fetch saved addresses and auto-populate for logged-in users
+  useEffect(() => {
+    async function fetchSavedAddresses() {
+      if (!session?.user) return
+
+      try {
+        const res = await fetch('/api/addresses')
+        const data = await res.json()
+
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          // Find the default address or use the first one
+          const defaultAddress = data.data.find((a: { isDefault?: boolean }) => a.isDefault) || data.data[0]
+
+          if (defaultAddress) {
+            // Auto-populate form with saved address
+            setValue("recipientName", defaultAddress.recipientName)
+            setValue("phone", defaultAddress.phone)
+            setValue("streetAddress", defaultAddress.streetAddress)
+            setValue("suburb", defaultAddress.suburb)
+            setValue("postalCode", defaultAddress.postalCode)
+            setValue("province", defaultAddress.province)
+
+            // Find matching town from delivery areas
+            const matchingTown = deliveryTowns.find(
+              t => t.name.toLowerCase() === defaultAddress.city.toLowerCase()
+            )
+            if (matchingTown) {
+              setValue("town", matchingTown.name)
+              setValue("city", matchingTown.name)
+            } else {
+              setValue("city", defaultAddress.city)
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch saved addresses:', error)
+      }
+    }
+
+    fetchSavedAddresses()
+  }, [session, setValue])
+
   const handleStepChange = async (nextStep: number) => {
     // Validate current step before proceeding
     if (nextStep > currentStep) {
@@ -346,6 +388,8 @@ export default function CheckoutPage() {
         guestEmail: session ? undefined : data.email,
         guestPhone: session ? undefined : data.phone,
         paymentMethod: data.paymentMethod,
+        // Save address for logged-in users (only for home delivery)
+        saveAddress: !isSchoolCollection && session?.user && data.saveAddress === true,
       }
 
       // Debug log to see what's being sent

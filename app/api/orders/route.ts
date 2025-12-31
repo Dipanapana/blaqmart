@@ -49,6 +49,9 @@ const orderSchema = z.object({
 
   // Payment
   paymentMethod: z.enum(["payfast", "yoco", "cod"]).default("yoco"),
+
+  // Save address for future orders
+  saveAddress: z.boolean().default(false),
 }).superRefine((data, ctx) => {
   if (data.deliveryMethod === "school") {
     if (!data.schoolId) {
@@ -264,6 +267,65 @@ export async function POST(request: NextRequest) {
       deliveryType,
       schoolId: order.schoolId,
     })
+
+    // Save address for logged-in users if requested
+    if (data.saveAddress && customerId && !isSchoolCollection && data.shippingAddress) {
+      try {
+        // Check if address already exists
+        const existingAddress = await db.address.findFirst({
+          where: {
+            userId: customerId,
+            streetAddress: data.shippingAddress.streetAddress,
+            postalCode: data.shippingAddress.postalCode,
+          },
+        })
+
+        if (!existingAddress) {
+          // Check how many addresses the user already has
+          const addressCount = await db.address.count({
+            where: { userId: customerId },
+          })
+
+          // First address becomes default
+          const isDefault = addressCount === 0
+
+          // Create new address
+          const savedAddress = await db.address.create({
+            data: {
+              userId: customerId,
+              recipientName: data.shippingAddress.recipientName,
+              phone: data.shippingAddress.phone,
+              streetAddress: data.shippingAddress.streetAddress,
+              suburb: data.shippingAddress.suburb,
+              city: data.shippingAddress.city,
+              postalCode: data.shippingAddress.postalCode,
+              province: data.shippingAddress.province,
+              isDefault,
+            },
+          })
+
+          // Link address to order
+          await db.order.update({
+            where: { id: order.id },
+            data: { addressId: savedAddress.id },
+          })
+
+          logger.info("Address", "Saved for order", {
+            orderId: order.id,
+            addressId: savedAddress.id,
+          })
+        } else {
+          // Link existing address to order
+          await db.order.update({
+            where: { id: order.id },
+            data: { addressId: existingAddress.id },
+          })
+        }
+      } catch (addressError) {
+        // Log but don't fail the order
+        logger.error("Address save", addressError as Error, { orderId: order.id })
+      }
+    }
 
     // Send order confirmation email for COD orders (Yoco emails sent after payment)
     if (data.paymentMethod === "cod") {
