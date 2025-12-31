@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { ShoppingCart, Check, Loader2, Plus, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn, formatPrice } from "@/lib/utils"
-import { useCart } from "@/lib/stores/cart"
+import { useCart } from "@/hooks/use-cart"
 import { toast } from "sonner"
 
 interface StationeryItem {

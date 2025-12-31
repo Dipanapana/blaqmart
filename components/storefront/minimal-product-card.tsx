@@ -6,7 +6,7 @@ import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import { Plus, Check, Heart, Eye } from "lucide-react"
 import { cn, formatPrice } from "@/lib/utils"
-import { useCart } from "@/lib/stores/cart"
+import { useCart } from "@/hooks/use-cart"
 import { SocialProofBadge } from "./social-proof-badge"
 import { toast } from "sonner"
 
