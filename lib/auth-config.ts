@@ -78,4 +78,6 @@ export const authConfig: NextAuthConfig = {
   session: {
     strategy: "jwt",
   },
+  // Required for production behind proxies (Railway, Vercel, etc.)
+  trustHost: true,
 }
