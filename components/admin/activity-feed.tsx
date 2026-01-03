@@ -5,7 +5,7 @@ import { formatDistanceToNow } from "date-fns"
 import {
   Package,
   ShoppingCart,
-  School,
+  School, 
   User,
   Settings,
   TrendingUp,

@@ -8,19 +8,19 @@ import {
   ShoppingCart,
   Gift,
   Settings,
-  LogOut,
   Menu,
   X,
   Tag,
   School,
+  BarChart3,
 } from "lucide-react"
 import { useState } from "react"
 import { Logo } from "@/components/shared/logo"
-import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 const navItems = [
   { href: "/admin", icon: LayoutDashboard, label: "Dashboard" },
+  { href: "/admin/analytics", icon: BarChart3, label: "Analytics" },
   { href: "/admin/schools", icon: School, label: "Schools" },
   { href: "/admin/products", icon: Package, label: "Products" },
   { href: "/admin/categories", icon: Tag, label: "Categories" },
@@ -92,15 +92,6 @@ export function AdminSidebar() {
             })}
           </nav>
 
-          {/* Footer */}
-          <div className="border-t p-4">
-            <Button variant="ghost" className="w-full justify-start" asChild>
-              <Link href="/">
-                <LogOut className="mr-2 h-4 w-4" />
-                Back to Store
-              </Link>
-            </Button>
-          </div>
         </div>
       </aside>
     </>
