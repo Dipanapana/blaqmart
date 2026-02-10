@@ -25,6 +25,7 @@ interface Order {
   total: number;
   deliveryAddress: string;
   customerPhone: string;
+  driverId: string | null;
   customer: {
     name: string | null;
     phone: string;

@@ -149,7 +149,7 @@ export async function GET(
         },
 
         // Location history for route visualization
-        route: order.locationHistory.map((loc) => ({
+        route: order.locationHistory.map((loc: any) => ({
           latitude: loc.latitude,
           longitude: loc.longitude,
           timestamp: loc.createdAt,

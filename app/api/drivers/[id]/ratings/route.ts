@@ -39,12 +39,12 @@ export async function GET(
 
     // Calculate average rating
     const averageRating = ratings.length > 0
-      ? ratings.reduce((sum, rating) => sum + rating.rating, 0) / ratings.length
+      ? ratings.reduce((sum: any, rating: any) => sum + rating.rating, 0) / ratings.length
       : 0;
 
     return NextResponse.json({
       success: true,
-      ratings: ratings.map((rating) => ({
+      ratings: ratings.map((rating: any) => ({
         id: rating.id,
         rating: rating.rating,
         comment: rating.comment,

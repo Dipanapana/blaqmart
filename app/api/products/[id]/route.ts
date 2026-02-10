@@ -14,17 +14,30 @@ export async function GET(
       // Return mock data if Prisma not set up
       return NextResponse.json({
         id: id,
-        name: 'Sample Product',
-        description: 'This is a sample product',
-        price: 19.99,
+        name: 'BM Pro Dashcam 1080P',
+        description: 'Full 1080P HD recording with 170-degree ultra-wide angle lens. Night vision, G-sensor crash detection, and loop recording.',
+        price: 790.0,
         imageUrl: null,
-        stock: 25,
+        images: [],
+        videoUrl: null,
+        stock: 50,
         isActive: true,
+        category: 'SECURITY_DASHCAM',
+        sku: 'BM-DC-001',
+        specs: {
+          resolution: '1080P Full HD',
+          angle: '170-degree wide angle',
+          screen: '2.0 inch LCD',
+          nightVision: true,
+          gSensor: true,
+          loopRecording: true,
+          parkingMonitor: true,
+        },
         store: {
           id: '1',
-          name: 'Sample Store',
-          address: '123 Main St, Warrenton',
-          phone: '0812345678',
+          name: 'BLAQMART Security',
+          address: 'Nationwide - South Africa',
+          phone: '+27000000001',
         },
       });
     }

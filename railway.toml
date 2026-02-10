@@ -1,0 +1,10 @@
+[build]
+builder = "nixpacks"
+buildCommand = "STANDALONE_BUILD=true pnpm install && pnpm prisma generate && STANDALONE_BUILD=true pnpm build"
+
+[deploy]
+startCommand = "pnpm start"
+healthcheckPath = "/"
+healthcheckTimeout = 300
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 5

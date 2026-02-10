@@ -27,8 +27,8 @@ export default function VendorStorePage() {
     name: '',
     address: '',
     phone: '',
-    latitude: -27.7069,
-    longitude: 28.2294,
+    latitude: -26.2041,
+    longitude: 28.0473,
   });
 
   useEffect(() => {
@@ -89,7 +89,7 @@ export default function VendorStorePage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center py-12">
-        <Loader2 className="w-8 h-8 text-green-600 animate-spin" />
+        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
       </div>
     );
   }
@@ -117,7 +117,7 @@ export default function VendorStorePage() {
             </div>
             <div className={`px-3 py-1 rounded-full text-sm font-medium ${
               store.isActive
-                ? 'bg-green-100 text-green-700'
+                ? 'bg-blue-100 text-blue-700'
                 : 'bg-gray-100 text-gray-700'
             }`}>
               {store.isActive ? 'Active' : 'Inactive'}
@@ -140,7 +140,7 @@ export default function VendorStorePage() {
           <div className="mt-6 flex gap-3">
             <button
               onClick={() => router.push('/vendor/products')}
-              className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
             >
               Manage Products
             </button>
@@ -174,8 +174,8 @@ export default function VendorStorePage() {
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="e.g., Green Valley Farm"
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              placeholder="e.g., BLAQMART Security"
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             />
           </div>
@@ -190,9 +190,9 @@ export default function VendorStorePage() {
             <textarea
               value={formData.address}
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              placeholder="123 Main Street, Warrenton, 8530"
+              placeholder="123 Main Road, Johannesburg, 2000"
               rows={3}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             />
           </div>
@@ -212,7 +212,7 @@ export default function VendorStorePage() {
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               placeholder="0812345678"
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             />
           </div>
@@ -222,7 +222,7 @@ export default function VendorStorePage() {
           <button
             type="submit"
             disabled={saving}
-            className="w-full py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving ? (
               <span className="flex items-center justify-center gap-2">

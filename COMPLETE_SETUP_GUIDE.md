@@ -21,7 +21,7 @@ For experienced developers:
 
 ```bash
 # Clone and install
-git clone <repo-url> blaqmart
+git clone https://github.com/Dipanapana/blaqmart.git blaqmart
 cd blaqmart
 pnpm install
 
@@ -153,9 +153,9 @@ SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 # Application URL (keep as is for local development)
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
 
-# PayFast (optional for now, needed for payments later)
-PAYFAST_MERCHANT_ID="10000100"
-PAYFAST_MERCHANT_KEY="46f0cd694581a"
+# Yoco (optional for now, needed for payments later)
+YOCO_SECRET_KEY="sk_test_your_yoco_secret_key"
+YOCO_WEBHOOK_SECRET="whsec_your_yoco_webhook_secret"
 
 # Twilio (optional for now, needed for SMS later)
 TWILIO_ACCOUNT_SID="your-account-sid"
@@ -316,9 +316,9 @@ You should see the BLAQMART homepage! 🎉
 
 1. Scroll to **"Browse Products"** section
 2. You should see 3 mock products:
-   - Fresh Tomatoes (R15.99)
-   - White Bread (R12.50)
-   - Fresh Milk 2L (R22.99)
+   - BM Pro Dashcam 1080P (R15.99)
+   - BM 4-Channel DVR Kit (R12.50)
+   - 32GB MicroSD Card (R22.99)
 3. Each product card shows:
    - Product name
    - Store name
@@ -327,7 +327,7 @@ You should see the BLAQMART homepage! 🎉
 
 ✅ **Test Search:**
 
-1. Type `"tomato"` in search bar
+1. Type `"dashcam"` in search bar
 2. Product list filters to show only matching products
 3. Clear search to see all products again
 
@@ -566,7 +566,7 @@ Opens: [http://localhost:5555](http://localhost:5555)
    - Follow the 30-day plan
    - Day 4: Vendor Dashboard
    - Day 5: Shopping Cart
-   - Weekend: Checkout + PayFast
+   - Weekend: Checkout + Yoco
 
 ---
 
@@ -579,8 +579,8 @@ Opens: [http://localhost:5555](http://localhost:5555)
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅ Yes | Supabase anon key | `eyJhbGci...` |
 | `SUPABASE_SERVICE_ROLE_KEY` | ✅ Yes | Supabase service key | `eyJhbGci...` |
 | `NEXT_PUBLIC_APP_URL` | ✅ Yes | Your app URL | `http://localhost:3000` |
-| `PAYFAST_MERCHANT_ID` | ⏳ Later | PayFast merchant ID | `10000100` |
-| `PAYFAST_MERCHANT_KEY` | ⏳ Later | PayFast merchant key | `46f0cd...` |
+| `YOCO_SECRET_KEY` | ⏳ Later | Yoco secret key | `sk_test_...` |
+| `YOCO_WEBHOOK_SECRET` | ⏳ Later | Yoco webhook secret | `whsec_...` |
 | `TWILIO_ACCOUNT_SID` | ⏳ Later | Twilio account SID | `ACxxxxx` |
 | `TWILIO_AUTH_TOKEN` | ⏳ Later | Twilio auth token | `your-token` |
 | `TWILIO_PHONE_NUMBER` | ⏳ Later | Twilio phone number | `+27...` |

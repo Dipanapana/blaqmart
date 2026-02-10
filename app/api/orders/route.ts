@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { deliveryAddress, customerPhone, notes, items } = body;
+    const { deliveryAddress, customerPhone, notes, items, province } = body;
 
     // Validate required fields
     if (!deliveryAddress || !customerPhone || !items || items.length === 0) {
@@ -99,10 +99,14 @@ export async function POST(request: NextRequest) {
     for (const [storeId, storeItems] of Object.entries(itemsByStore)) {
       // Calculate totals
       const subtotal = storeItems.reduce(
-        (sum, item) => sum + item.price * item.quantity,
+        (sum: any, item: any) => sum + item.price * item.quantity,
         0
       );
-      const deliveryFee = subtotal >= 200 ? 0 : 25;
+
+      // Province-based shipping fee for nationwide delivery
+      const { calculateShippingFee } = await import('@/lib/shipping');
+      const shippingFee = calculateShippingFee(province || null, subtotal);
+      const deliveryFee = shippingFee;
       const total = subtotal + deliveryFee;
 
       // Create order
@@ -112,17 +116,19 @@ export async function POST(request: NextRequest) {
           customerId: user.id,
           customerPhone,
           deliveryAddress,
-          deliveryLat: -28.4541, // Default Warrenton coordinates (will be updated with geocoding later)
-          deliveryLng: 24.8473,
+          deliveryLat: null,
+          deliveryLng: null,
           storeId,
           subtotal,
           deliveryFee,
           total,
+          province: province || null,
+          shippingFee,
           status: 'PENDING',
           paymentStatus: 'PENDING',
-          paymentMethod: 'PAYFAST',
+          paymentMethod: 'YOCO',
           items: {
-            create: storeItems.map((item) => ({
+            create: storeItems.map((item: any) => ({
               productId: item.productId,
               quantity: item.quantity,
               price: item.price,

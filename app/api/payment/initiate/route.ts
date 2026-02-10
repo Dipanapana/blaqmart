@@ -1,30 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import crypto from 'crypto';
 
-// PayFast configuration
-const PAYFAST_CONFIG = {
-  merchant_id: process.env.PAYFAST_MERCHANT_ID || '10000100',
-  merchant_key: process.env.PAYFAST_MERCHANT_KEY || '46f0cd694581a',
-  passphrase: process.env.PAYFAST_PASSPHRASE || 'jt7NOE43FZPn',
-  sandbox: process.env.NODE_ENV !== 'production',
-};
+const YOCO_SECRET_KEY = process.env.YOCO_SECRET_KEY || '';
+const YOCO_API_URL = 'https://payments.yoco.com/api/checkouts';
 
-// Generate PayFast signature
-function generateSignature(data: Record<string, any>, passphrase: string = ''): string {
-  // Create parameter string
-  const paramString = Object.keys(data)
-    .sort()
-    .map((key) => `${key}=${encodeURIComponent(data[key]).replace(/%20/g, '+')}`)
-    .join('&');
-
-  // Add passphrase if provided
-  const stringToSign = passphrase ? `${paramString}&passphrase=${encodeURIComponent(passphrase)}` : paramString;
-
-  // Generate MD5 signature
-  return crypto.createHash('md5').update(stringToSign).digest('hex');
-}
-
-// POST /api/payment/initiate - Create PayFast payment
+// POST /api/payment/initiate - Create Yoco Checkout
 export async function POST(request: NextRequest) {
   try {
     const { prisma } = await import('@/lib/prisma');
@@ -82,61 +61,72 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!YOCO_SECRET_KEY) {
+      console.error('YOCO_SECRET_KEY not configured');
+      return NextResponse.json(
+        { error: 'Payment gateway not configured' },
+        { status: 503 }
+      );
+    }
+
     // Get base URL
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
-    // Build PayFast payment data
-    const paymentData = {
-      merchant_id: PAYFAST_CONFIG.merchant_id,
-      merchant_key: PAYFAST_CONFIG.merchant_key,
-      return_url: `${baseUrl}/payment/success?order_id=${orderId}`,
-      cancel_url: `${baseUrl}/payment/cancel?order_id=${orderId}`,
-      notify_url: `${baseUrl}/api/payment/notify`,
+    // Amount in cents for Yoco (R790 = 79000 cents)
+    const amountInCents = Math.round(amount * 100);
 
-      // Buyer details
-      name_first: order.customer.name?.split(' ')[0] || 'Customer',
-      name_last: order.customer.name?.split(' ').slice(1).join(' ') || '',
-      email_address: `${order.customer.phone.replace('+', '')}@blaqmart.co.za`, // Generate email from phone
-      cell_number: order.customer.phone.replace('+27', '0'),
-
-      // Transaction details
-      m_payment_id: order.orderNumber,
-      amount: amount.toFixed(2),
-      item_name: `BLAQMART Order ${order.orderNumber}`,
-      item_description: `${order.items?.length || 0} items from ${order.store.name}`,
-
-      // Custom fields
-      custom_str1: orderId,
-      custom_str2: order.storeId,
-    };
-
-    // Generate signature
-    const signature = generateSignature(paymentData, PAYFAST_CONFIG.passphrase);
-
-    // Build PayFast URL
-    const payfastUrl = PAYFAST_CONFIG.sandbox
-      ? 'https://sandbox.payfast.co.za/eng/process'
-      : 'https://www.payfast.co.za/eng/process';
-
-    // Build payment URL with query params
-    const params = new URLSearchParams({
-      ...paymentData,
-      signature,
+    // Create Yoco Checkout session
+    const yocoResponse = await fetch(YOCO_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${YOCO_SECRET_KEY}`,
+      },
+      body: JSON.stringify({
+        amount: amountInCents,
+        currency: 'ZAR',
+        successUrl: `${baseUrl}/payment/success?order_id=${orderId}`,
+        cancelUrl: `${baseUrl}/payment/cancel?order_id=${orderId}`,
+        failureUrl: `${baseUrl}/payment/cancel?order_id=${orderId}`,
+        metadata: {
+          orderId,
+          orderNumber: order.orderNumber,
+        },
+      }),
     });
 
-    const paymentUrl = `${payfastUrl}?${params.toString()}`;
+    if (!yocoResponse.ok) {
+      const errorData = await yocoResponse.text();
+      console.error('Yoco API error:', yocoResponse.status, errorData);
+      return NextResponse.json(
+        { error: 'Failed to create payment session' },
+        { status: 502 }
+      );
+    }
 
-    // Store payment reference in order
+    const yocoData = await yocoResponse.json();
+
+    if (!yocoData.redirectUrl) {
+      console.error('No redirectUrl in Yoco response:', yocoData);
+      return NextResponse.json(
+        { error: 'Invalid payment gateway response' },
+        { status: 502 }
+      );
+    }
+
+    // Store Yoco checkout ID and payment method on the order
     await prisma.order.update({
       where: { id: orderId },
       data: {
-        paymentMethod: 'PAYFAST',
+        paymentMethod: 'YOCO',
+        // Store the Yoco checkout ID in a field we can query later for webhook correlation
+        trackingNumber: yocoData.id, // Temporarily use trackingNumber to store Yoco checkout ID
       },
     });
 
     return NextResponse.json({
       success: true,
-      paymentUrl,
+      paymentUrl: yocoData.redirectUrl,
       orderNumber: order.orderNumber,
     });
   } catch (error) {

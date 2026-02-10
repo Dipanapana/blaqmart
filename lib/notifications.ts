@@ -397,13 +397,13 @@ export function generateOrderConfirmationEmail(data: {
             <li>The vendor will prepare your order</li>
             <li>A driver will be assigned</li>
             <li>You'll receive updates via SMS</li>
-            <li>Expected delivery: 45 minutes or less</li>
+            <li>Expected delivery: 3-5 business days</li>
           </ul>
         </div>
 
         <p style="text-align: center; color: #666; font-size: 14px; margin-top: 30px;">
           Thank you for choosing BLAQMART!<br>
-          Your local marketplace for Warrenton
+          Drive Protected. Record Everything.
         </p>
       </div>
     </body>

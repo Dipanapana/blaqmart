@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      payouts: payouts.map((payout) => ({
+      payouts: payouts.map((payout: any) => ({
         id: payout.id,
         vendorName: payout.vendor.name || 'Vendor',
         vendorPhone: payout.vendor.phone,

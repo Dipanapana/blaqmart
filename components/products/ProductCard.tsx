@@ -2,7 +2,8 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { ShoppingCart, Store, Crown } from 'lucide-react';
+import { ShoppingCart, Camera } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { formatCurrency } from '@/lib/utils';
 
 interface Product {
@@ -13,6 +14,7 @@ interface Product {
   imageUrl: string | null;
   stock: number;
   isActive: boolean;
+  category?: string;
   store: {
     id: string;
     name: string;
@@ -26,43 +28,48 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, onAddToCart }: ProductCardProps) {
-  const isPremiumStore = product.store.subscriptionTier === 'PREMIUM' ||
-                         product.store.subscriptionTier === 'ENTERPRISE';
+  const categoryLabel = product.category === 'SECURITY_DASHCAM'
+    ? 'Dashcam'
+    : product.category === 'SECURITY_ACCESSORY'
+    ? 'Accessory'
+    : null;
 
   return (
-    <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden group">
+    <motion.div
+      whileHover={{ y: -4 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+      className="bg-slate-800 rounded-xl border border-slate-700 hover:border-slate-600 overflow-hidden group"
+    >
       {/* Product Image */}
-      <Link href={`/products/${product.id}`} className="block relative h-48 bg-gray-100">
+      <Link href={`/products/${product.id}`} className="block relative h-48 bg-slate-900">
         {product.imageUrl ? (
           <Image
             src={product.imageUrl}
             alt={product.name}
             fill
-            className="object-cover group-hover:scale-105 transition-transform duration-300"
+            className="object-cover group-hover:scale-105 transition-transform duration-500"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <div className="text-center text-gray-400">
-              <Store className="w-12 h-12 mx-auto mb-2" />
-              <span className="text-sm">No image</span>
-            </div>
+            <Camera className="w-12 h-12 text-slate-600" />
           </div>
         )}
 
         {/* Out of stock badge */}
         {product.stock === 0 && (
-          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <span className="bg-red-600 text-white px-4 py-2 rounded-lg font-semibold">
+          <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+            <span className="bg-red-600 text-white px-4 py-2 rounded-lg font-semibold text-sm">
               Out of Stock
             </span>
           </div>
         )}
 
-        {/* Premium badge */}
-        {isPremiumStore && (
-          <div className="absolute top-2 right-2 bg-yellow-500 text-white px-2 py-1 rounded-lg text-xs font-semibold flex items-center gap-1">
-            <Crown className="w-3 h-3" />
-            Premium
+        {/* Category badge */}
+        {categoryLabel && (
+          <div className="absolute top-3 left-3">
+            <span className="bg-blue-600/90 text-white px-2.5 py-1 rounded-full text-xs font-semibold">
+              {categoryLabel}
+            </span>
           </div>
         )}
       </Link>
@@ -70,21 +77,13 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
       {/* Product Info */}
       <div className="p-4">
         <Link href={`/products/${product.id}`}>
-          <h3 className="font-semibold text-lg mb-1 line-clamp-1 hover:text-green-600 transition-colors">
+          <h3 className="font-semibold text-base text-white mb-1 line-clamp-1 hover:text-blue-400 transition-colors">
             {product.name}
           </h3>
         </Link>
 
-        <Link
-          href={`/stores/${product.store.id}`}
-          className="text-sm text-gray-600 hover:text-green-600 transition-colors mb-2 flex items-center gap-1"
-        >
-          <Store className="w-3 h-3" />
-          {product.store.name}
-        </Link>
-
         {product.description && (
-          <p className="text-sm text-gray-500 mb-3 line-clamp-2">
+          <p className="text-sm text-slate-400 mb-3 line-clamp-2">
             {product.description}
           </p>
         )}
@@ -92,11 +91,11 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
         {/* Price and Action */}
         <div className="flex justify-between items-center">
           <div>
-            <span className="text-2xl font-bold text-green-600">
+            <span className="text-xl font-bold text-blue-400">
               {formatCurrency(product.price)}
             </span>
             {product.stock > 0 && product.stock <= 10 && (
-              <p className="text-xs text-orange-600 mt-1">
+              <p className="text-xs text-amber-500 mt-0.5">
                 Only {product.stock} left
               </p>
             )}
@@ -105,13 +104,13 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
           <button
             onClick={() => onAddToCart?.(product)}
             disabled={product.stock === 0}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+            className="px-3.5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5 text-sm font-medium"
           >
             <ShoppingCart className="w-4 h-4" />
             Add
           </button>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

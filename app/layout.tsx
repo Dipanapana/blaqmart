@@ -3,9 +3,9 @@ import { AuthProvider } from '@/lib/auth-context';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'BLAQMART - Local Commerce for Warrenton',
-  description: 'Fast delivery from your favorite local vendors in Warrenton',
-  keywords: ['delivery', 'warrenton', 'local', 'shopping', 'groceries'],
+  title: 'BLAQMART Security - Dashcams & Security Products | South Africa',
+  description: 'Premium dashcams and security products delivered nationwide across South Africa. Starting from R790. Secure payment via Yoco.',
+  keywords: ['dashcam', 'security camera', 'car camera', 'dash cam south africa', 'vehicle security', 'dashcam south africa', 'car dashcam', 'BLAQMART'],
 };
 
 export default function RootLayout({
@@ -15,7 +15,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="font-sans antialiased">
+      <body className="font-sans antialiased bg-slate-950 text-white">
         <AuthProvider>
           {children}
         </AuthProvider>

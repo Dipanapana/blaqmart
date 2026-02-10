@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
       select: { id: true },
     });
 
-    const storeIds = stores.map((store) => store.id);
+    const storeIds = stores.map((store: any) => store.id);
 
     if (storeIds.length === 0) {
       return NextResponse.json({

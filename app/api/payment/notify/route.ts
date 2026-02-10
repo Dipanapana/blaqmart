@@ -1,35 +1,56 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 
-// PayFast configuration
-const PAYFAST_CONFIG = {
-  merchant_id: process.env.PAYFAST_MERCHANT_ID || '10000100',
-  merchant_key: process.env.PAYFAST_MERCHANT_KEY || '46f0cd694581a',
-  passphrase: process.env.PAYFAST_PASSPHRASE || 'jt7NOE43FZPn',
-  sandbox: process.env.NODE_ENV !== 'production',
-};
+const YOCO_WEBHOOK_SECRET = process.env.YOCO_WEBHOOK_SECRET || '';
 
-// Validate PayFast signature
-function validateSignature(data: Record<string, any>, signature: string, passphrase: string = ''): boolean {
-  // Remove signature from data
-  const { signature: _, ...dataWithoutSignature } = data;
+// Verify Yoco webhook signature
+function verifyWebhookSignature(
+  rawBody: string,
+  webhookId: string,
+  timestamp: string,
+  signatureHeader: string,
+  secret: string
+): boolean {
+  try {
+    // Build signed content: webhookId.timestamp.rawBody
+    const signedContent = `${webhookId}.${timestamp}.${rawBody}`;
 
-  // Create parameter string
-  const paramString = Object.keys(dataWithoutSignature)
-    .sort()
-    .map((key) => `${key}=${encodeURIComponent(dataWithoutSignature[key]).replace(/%20/g, '+')}`)
-    .join('&');
+    // Strip 'whsec_' prefix from secret key
+    const secretBytes = Buffer.from(
+      secret.startsWith('whsec_') ? secret.slice(6) : secret,
+      'base64'
+    );
 
-  // Add passphrase if provided
-  const stringToSign = passphrase ? `${paramString}&passphrase=${encodeURIComponent(passphrase)}` : paramString;
+    // Compute HMAC-SHA256 and base64 encode
+    const computedSignature = crypto
+      .createHmac('sha256', secretBytes)
+      .update(signedContent)
+      .digest('base64');
 
-  // Generate MD5 signature
-  const calculatedSignature = crypto.createHash('md5').update(stringToSign).digest('hex');
+    // Strip version prefix (e.g., "v1,") from the signature header
+    const expectedSignatures = signatureHeader.split(' ');
 
-  return calculatedSignature === signature;
+    for (const sig of expectedSignatures) {
+      const sigValue = sig.startsWith('v1,') ? sig.slice(3) : sig;
+
+      // Constant-time comparison to prevent timing attacks
+      if (sigValue.length === computedSignature.length) {
+        const a = Buffer.from(sigValue);
+        const b = Buffer.from(computedSignature);
+        if (crypto.timingSafeEqual(a, b)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  } catch (error) {
+    console.error('Webhook signature verification error:', error);
+    return false;
+  }
 }
 
-// POST /api/payment/notify - PayFast IPN handler
+// POST /api/payment/notify - Yoco Webhook handler
 export async function POST(request: NextRequest) {
   try {
     const { prisma } = await import('@/lib/prisma');
@@ -38,61 +59,83 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
     }
 
-    // Get form data from PayFast
-    const formData = await request.formData();
-    const data: Record<string, any> = {};
+    // Read raw body for signature verification
+    const rawBody = await request.text();
 
-    formData.forEach((value, key) => {
-      data[key] = value.toString();
-    });
+    // Extract webhook headers
+    const webhookId = request.headers.get('webhook-id') || '';
+    const timestamp = request.headers.get('webhook-timestamp') || '';
+    const signatureHeader = request.headers.get('webhook-signature') || '';
 
-    console.log('PayFast IPN received:', data);
+    // Verify signature if webhook secret is configured
+    if (YOCO_WEBHOOK_SECRET) {
+      const isValid = verifyWebhookSignature(
+        rawBody,
+        webhookId,
+        timestamp,
+        signatureHeader,
+        YOCO_WEBHOOK_SECRET
+      );
 
-    // Validate signature
-    const signature = data.signature;
-    const isValid = validateSignature(data, signature, PAYFAST_CONFIG.passphrase);
+      if (!isValid) {
+        console.error('Invalid Yoco webhook signature');
+        return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
+      }
 
-    if (!isValid) {
-      console.error('Invalid PayFast signature');
-      return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
+      // Validate timestamp (within 5 minutes to prevent replay attacks)
+      const webhookTimestamp = parseInt(timestamp, 10);
+      const currentTimestamp = Math.floor(Date.now() / 1000);
+      if (Math.abs(currentTimestamp - webhookTimestamp) > 300) {
+        console.error('Webhook timestamp too old');
+        return NextResponse.json({ error: 'Timestamp expired' }, { status: 400 });
+      }
+    } else {
+      console.warn('YOCO_WEBHOOK_SECRET not set — skipping signature verification');
     }
 
-    // Validate merchant ID
-    if (data.merchant_id !== PAYFAST_CONFIG.merchant_id) {
-      console.error('Invalid merchant ID');
-      return NextResponse.json({ error: 'Invalid merchant ID' }, { status: 400 });
+    // Parse webhook body
+    const data = JSON.parse(rawBody);
+
+    console.log('Yoco webhook received:', data.type, data.id);
+
+    const eventType = data.type;
+    const payload = data.payload;
+
+    if (!payload) {
+      console.error('No payload in webhook event');
+      return NextResponse.json({ error: 'Missing payload' }, { status: 400 });
     }
 
-    // Get order ID from custom field
-    const orderId = data.custom_str1;
+    // Get checkoutId from metadata to find the order
+    const checkoutId = payload.metadata?.checkoutId;
 
-    if (!orderId) {
-      console.error('No order ID in payment notification');
-      return NextResponse.json({ error: 'Missing order ID' }, { status: 400 });
+    if (!checkoutId) {
+      console.error('No checkoutId in webhook payload metadata');
+      return NextResponse.json({ error: 'Missing checkoutId' }, { status: 400 });
     }
 
-    // Get order
-    const order = await prisma.order.findUnique({
-      where: { id: orderId },
+    // Find order by the stored Yoco checkout ID
+    // We stored it in trackingNumber during payment initiation
+    const order = await prisma.order.findFirst({
+      where: { trackingNumber: checkoutId },
     });
 
     if (!order) {
-      console.error('Order not found:', orderId);
+      console.error('Order not found for checkoutId:', checkoutId);
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
-    // Check payment status
-    const paymentStatus = data.payment_status;
-
-    if (paymentStatus === 'COMPLETE') {
-      // Payment successful - update order with full details for notifications
+    if (eventType === 'payment.succeeded') {
+      // Payment successful — update order
       const updatedOrder = await prisma.order.update({
-        where: { id: orderId },
+        where: { id: order.id },
         data: {
           paymentStatus: 'PAID',
           status: 'CONFIRMED',
           confirmedAt: new Date(),
-          estimatedTime: 45,
+          // Clear the temporary checkout ID from trackingNumber
+          // so it can be used for actual courier tracking later
+          trackingNumber: null,
         },
         include: {
           customer: true,
@@ -110,22 +153,21 @@ export async function POST(request: NextRequest) {
         console.error('Failed to send payment confirmation notifications:', notifError);
       }
 
-    } else if (paymentStatus === 'FAILED' || paymentStatus === 'CANCELLED') {
-      // Payment failed
+    } else if (eventType === 'payment.failed') {
+      // Payment failed — update order and restore stock
       await prisma.order.update({
-        where: { id: orderId },
+        where: { id: order.id },
         data: {
           paymentStatus: 'FAILED',
           status: 'CANCELLED',
+          trackingNumber: null,
         },
       });
 
       // Restore product stock
       const orderWithItems = await prisma.order.findUnique({
-        where: { id: orderId },
-        include: {
-          items: true,
-        },
+        where: { id: order.id },
+        include: { items: true },
       });
 
       if (orderWithItems) {
@@ -133,15 +175,15 @@ export async function POST(request: NextRequest) {
           await prisma.product.update({
             where: { id: item.productId },
             data: {
-              stock: {
-                increment: item.quantity,
-              },
+              stock: { increment: item.quantity },
             },
           });
         }
       }
 
       console.log('Payment failed for order:', order.orderNumber);
+    } else {
+      console.log('Unhandled webhook event type:', eventType);
     }
 
     // Return 200 to acknowledge receipt
@@ -153,9 +195,9 @@ export async function POST(request: NextRequest) {
 }
 
 // GET /api/payment/notify - For testing
-export async function GET(request: NextRequest) {
+export async function GET() {
   return NextResponse.json({
-    message: 'PayFast IPN endpoint',
+    message: 'Yoco webhook endpoint',
     note: 'POST requests only',
   });
 }

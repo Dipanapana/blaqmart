@@ -117,7 +117,7 @@ export async function GET(
           phone: conversation.user.phone,
         },
         assignee: conversation.assignee?.name,
-        messages: conversation.messages.map((msg) => ({
+        messages: conversation.messages.map((msg: any) => ({
           id: msg.id,
           message: msg.message,
           isFromCustomer: msg.isFromCustomer,

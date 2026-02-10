@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      productReviews: productReviews.map((review) => ({
+      productReviews: productReviews.map((review: any) => ({
         id: review.id,
         rating: review.rating,
         comment: review.comment,
@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
         productName: review.product.name,
         createdAt: review.createdAt,
       })),
-      storeReviews: storeReviews.map((review) => ({
+      storeReviews: storeReviews.map((review: any) => ({
         id: review.id,
         rating: review.rating,
         comment: review.comment,

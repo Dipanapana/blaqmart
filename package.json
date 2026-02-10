@@ -1,7 +1,7 @@
 {
   "name": "blaqmart",
   "version": "0.1.0",
-  "description": "BLAQMART - Local e-commerce marketplace for Warrenton",
+  "description": "BLAQMART - Nationwide security products store for South Africa",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -27,6 +27,7 @@
     "@supabase/supabase-js": "^2.76.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "framer-motion": "^12.34.0",
     "lucide-react": "^0.548.0",
     "next": "^16.0.0",
     "react": "^19.2.0",

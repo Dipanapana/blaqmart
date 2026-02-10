@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { Minus, Plus, Trash2, Store } from 'lucide-react';
+import { Minus, Plus, Trash2, Camera } from 'lucide-react';
 import { useCartStore, CartItem as CartItemType } from '@/lib/store/cart-store';
 import { formatCurrency } from '@/lib/utils';
 
@@ -34,12 +34,12 @@ export default function CartItem({ item }: CartItemProps) {
   const itemTotal = item.price * item.quantity;
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100 hover:shadow-md transition-shadow">
+    <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 hover:border-slate-600 transition-colors">
       <div className="flex gap-4">
         {/* Product Image */}
         <Link
           href={`/products/${item.productId}`}
-          className="relative w-24 h-24 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden"
+          className="relative w-20 h-20 bg-slate-900 rounded-lg flex-shrink-0 overflow-hidden"
         >
           {item.imageUrl ? (
             <Image
@@ -50,7 +50,7 @@ export default function CartItem({ item }: CartItemProps) {
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
-              <Store className="w-8 h-8 text-gray-300" />
+              <Camera className="w-8 h-8 text-slate-600" />
             </div>
           )}
         </Link>
@@ -58,51 +58,47 @@ export default function CartItem({ item }: CartItemProps) {
         {/* Product Info */}
         <div className="flex-1 min-w-0">
           <Link href={`/products/${item.productId}`}>
-            <h3 className="font-semibold text-lg truncate hover:text-green-600 transition-colors">
+            <h3 className="font-semibold text-white truncate hover:text-blue-400 transition-colors">
               {item.name}
             </h3>
           </Link>
-          <p className="text-sm text-gray-600 mb-2">{item.storeName}</p>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between mt-3">
+            <div className="flex items-center gap-2">
               {/* Quantity Controls */}
-              <div className="flex items-center border border-gray-300 rounded-lg">
+              <div className="flex items-center border border-slate-600 rounded-lg">
                 <button
                   onClick={handleDecrease}
                   disabled={item.quantity <= 1}
-                  className="p-2 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="p-1.5 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-white"
                   aria-label="Decrease quantity"
                 >
-                  <Minus className="w-4 h-4" />
+                  <Minus className="w-3.5 h-3.5" />
                 </button>
-                <span className="px-4 py-2 font-semibold min-w-[3rem] text-center">
+                <span className="px-3 py-1.5 font-semibold text-sm text-white min-w-[2.5rem] text-center">
                   {item.quantity}
                 </span>
                 <button
                   onClick={handleIncrease}
                   disabled={item.quantity >= item.stock}
-                  className="p-2 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="p-1.5 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-white"
                   aria-label="Increase quantity"
                 >
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-3.5 h-3.5" />
                 </button>
               </div>
 
-              {/* Stock Warning */}
               {item.quantity >= item.stock && (
-                <span className="text-xs text-orange-600 font-medium">
-                  Max stock
-                </span>
+                <span className="text-xs text-amber-500 font-medium">Max</span>
               )}
             </div>
 
             {/* Price */}
             <div className="text-right">
-              <p className="text-sm text-gray-500">
-                {formatCurrency(item.price)} × {item.quantity}
+              <p className="text-xs text-slate-500">
+                {formatCurrency(item.price)} x {item.quantity}
               </p>
-              <p className="text-xl font-bold text-green-600">
+              <p className="text-lg font-bold text-blue-400">
                 {formatCurrency(itemTotal)}
               </p>
             </div>
@@ -112,10 +108,10 @@ export default function CartItem({ item }: CartItemProps) {
         {/* Remove Button */}
         <button
           onClick={handleRemove}
-          className="p-2 text-red-600 hover:bg-red-50 rounded-lg h-fit transition-colors"
+          className="p-2 text-slate-500 hover:text-red-400 hover:bg-slate-700 rounded-lg h-fit transition-colors"
           aria-label="Remove from cart"
         >
-          <Trash2 className="w-5 h-5" />
+          <Trash2 className="w-4 h-4" />
         </button>
       </div>
     </div>

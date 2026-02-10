@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { calculateShippingFee, FREE_SHIPPING_THRESHOLD } from '@/lib/shipping';
 
 export interface CartItem {
   id: string;
@@ -15,12 +16,15 @@ export interface CartItem {
 
 interface CartStore {
   items: CartItem[];
+  province: string | null;
   addItem: (item: Omit<CartItem, 'quantity'>) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
+  setProvince: (province: string) => void;
   getItemCount: () => number;
   getSubtotal: () => number;
+  getShippingFee: () => number;
   getDeliveryFee: () => number;
   getTotal: () => number;
 }
@@ -29,13 +33,13 @@ export const useCartStore = create<CartStore>()(
   persist(
     (set, get) => ({
       items: [],
+      province: null,
 
       addItem: (item) => {
         const items = get().items;
         const existingItem = items.find((i) => i.productId === item.productId);
 
         if (existingItem) {
-          // If item already in cart, increase quantity
           set({
             items: items.map((i) =>
               i.productId === item.productId
@@ -44,7 +48,6 @@ export const useCartStore = create<CartStore>()(
             ),
           });
         } else {
-          // Add new item to cart
           set({
             items: [...items, { ...item, quantity: 1 }],
           });
@@ -73,7 +76,11 @@ export const useCartStore = create<CartStore>()(
       },
 
       clearCart: () => {
-        set({ items: [] });
+        set({ items: [], province: null });
+      },
+
+      setProvince: (province) => {
+        set({ province });
       },
 
       getItemCount: () => {
@@ -87,14 +94,19 @@ export const useCartStore = create<CartStore>()(
         );
       },
 
-      getDeliveryFee: () => {
+      getShippingFee: () => {
         const subtotal = get().getSubtotal();
-        // Free delivery over R200, otherwise R25
-        return subtotal >= 200 ? 0 : 25;
+        const province = get().province;
+        return calculateShippingFee(province, subtotal);
+      },
+
+      // Backward compatibility alias
+      getDeliveryFee: () => {
+        return get().getShippingFee();
       },
 
       getTotal: () => {
-        return get().getSubtotal() + get().getDeliveryFee();
+        return get().getSubtotal() + get().getShippingFee();
       },
     }),
     {

@@ -111,7 +111,7 @@ model Subscription {
   endDate          DateTime
   isActive         Boolean       @default(true)
   paymentStatus    PaymentStatus @default(PENDING)
-  payfastPaymentId String?
+  paymentId        String?
   createdAt        DateTime      @default(now())
 
   // Relations
@@ -120,16 +120,30 @@ model Subscription {
 
 // ==================== PRODUCTS ====================
 
+enum ProductCategory {
+  GROCERY
+  SECURITY_DASHCAM
+  SECURITY_CAMERA
+  SECURITY_ALARM
+  SECURITY_ACCESSORY
+}
+
 model Product {
-  id          String   @id @default(uuid())
+  id          String          @id @default(uuid())
   name        String
   description String?
   price       Float
   imageUrl    String?
-  stock       Int      @default(0)
-  isActive    Boolean  @default(true)
+  images      String[]        // Gallery image URLs
+  videoUrl    String?         // YouTube embed URL
+  stock       Int             @default(0)
+  isActive    Boolean         @default(true)
   storeId     String
-  createdAt   DateTime @default(now())
+  category    ProductCategory @default(SECURITY_DASHCAM)
+  sku         String?
+  weight      Float?          // Weight in kg for shipping
+  specs       Json?           // Flexible product specifications
+  createdAt   DateTime        @default(now())
 
   // Relations
   store      Store           @relation(fields: [storeId], references: [id])
@@ -140,9 +154,22 @@ model Product {
   @@index([isActive])
   @@index([createdAt])
   @@index([storeId, isActive])
+  @@index([category, isActive])
 }
 
 // ==================== ORDERS ====================
+
+enum SAProvince {
+  GAUTENG
+  WESTERN_CAPE
+  KWAZULU_NATAL
+  EASTERN_CAPE
+  FREE_STATE
+  LIMPOPO
+  MPUMALANGA
+  NORTH_WEST
+  NORTHERN_CAPE
+}
 
 model Order {
   id             String        @id @default(uuid())
@@ -152,8 +179,8 @@ model Order {
   customerId     String
   customerPhone  String
   deliveryAddress String
-  deliveryLat    Float
-  deliveryLng    Float
+  deliveryLat    Float?
+  deliveryLng    Float?
 
   // Store info
   storeId        String
@@ -162,6 +189,12 @@ model Order {
   subtotal       Float
   deliveryFee    Float         @default(25.00)
   total          Float
+
+  // Shipping (nationwide)
+  province       SAProvince?
+  shippingFee    Float         @default(0)
+  trackingNumber String?
+  courierName    String?
 
   // Status
   status         OrderStatus   @default(PENDING)

@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
     });
 
     const topStores = await Promise.all(
-      topStoresData.map(async (item) => {
+      topStoresData.map(async (item: any) => {
         const store = await prisma.store.findUnique({
           where: { id: item.storeId },
           select: { id: true, name: true, address: true },
@@ -137,7 +137,7 @@ export async function GET(request: NextRequest) {
       _count: true,
     });
 
-    const formattedSalesByDay = salesByDay.map((day) => ({
+    const formattedSalesByDay = salesByDay.map((day: any) => ({
       date: day.createdAt.toISOString().split('T')[0],
       revenue: day._sum.total || 0,
       orders: day._count,
@@ -175,7 +175,7 @@ export async function GET(request: NextRequest) {
           active: activeDrivers,
         },
         ordersByStatus,
-        recentOrders: recentOrders.map((order) => ({
+        recentOrders: recentOrders.map((order: any) => ({
           id: order.id,
           orderNumber: order.orderNumber,
           status: order.status,

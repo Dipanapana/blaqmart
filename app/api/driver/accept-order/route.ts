@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
       where: { id: orderId },
       data: {
         driverId: user.id,
-        estimatedTime: 45, // Default 45 minutes
+        estimatedTime: null, // Shipping time varies by province
       },
       include: {
         items: {

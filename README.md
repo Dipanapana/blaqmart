@@ -1,24 +1,24 @@
-# BLAQMART - Local Commerce Marketplace
+# BLAQMART - Security Products Store
 
-> **30-Day MVP Sprint: October 27 - November 25, 2025**
+> **Drive Protected. Record Everything.**
 
-## 🚀 Project Overview
+## Project Overview
 
-BLAQMART is a local e-commerce marketplace connecting vendors and customers in Warrenton with fast delivery services.
+BLAQMART is a nationwide South African e-commerce store specializing in premium dashcams and security products, delivered across all 9 provinces.
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **Frontend:** Next.js 16, React 19, TypeScript
 - **Styling:** Tailwind CSS 4
-- **Database:** PostgreSQL + PostGIS (via Supabase)
+- **Database:** PostgreSQL (via Supabase)
 - **ORM:** Prisma
 - **Auth:** Supabase Auth (Phone OTP)
-- **Payments:** PayFast
+- **Payments:** Yoco Online Checkout
 - **Messaging:** Twilio (SMS + WhatsApp)
-- **Hosting:** Vercel
+- **Hosting:** Railway
 - **Images:** Cloudinary
 
-## 📦 Installation
+## Installation
 
 ```bash
 # Install dependencies
@@ -29,76 +29,62 @@ cp .env.example .env
 # Edit .env with your credentials
 
 # Generate Prisma client
-pnpm db:generate
+pnpm prisma generate
 
 # Push database schema
-pnpm db:push
+pnpm prisma db push
+
+# Seed security products
+pnpm tsx prisma/seed-security.ts
 
 # Run development server
 pnpm dev
 ```
 
-## 🗄️ Database Setup
+## Database Setup
 
 1. Create a Supabase project at [supabase.com](https://supabase.com)
-2. Enable PostGIS extension:
-   ```sql
-   CREATE EXTENSION IF NOT EXISTS postgis;
-   ```
-3. Copy connection string to `.env`
-4. Run `pnpm db:push` to create tables
+2. Copy connection string to `.env`
+3. Run `pnpm prisma db push` to create tables
+4. Run `pnpm tsx prisma/seed-security.ts` to seed products
 
-## 📝 Available Scripts
+## Available Scripts
 
 - `pnpm dev` - Start development server
 - `pnpm build` - Build for production
 - `pnpm start` - Start production server
 - `pnpm lint` - Run ESLint
-- `pnpm db:generate` - Generate Prisma Client
-- `pnpm db:push` - Push schema to database
-- `pnpm db:studio` - Open Prisma Studio
+- `pnpm prisma generate` - Generate Prisma Client
+- `pnpm prisma db push` - Push schema to database
+- `pnpm prisma studio` - Open Prisma Studio
 
-## 🎯 MVP Features
+## Features
 
-### Week 1: Foundation
-- ✅ Database setup
-- ✅ Authentication (Phone OTP)
-- ✅ Basic UI (Homepage, product browsing)
-- ✅ Vendor dashboard
-- ⏳ Shopping cart
-- ⏳ Checkout + PayFast
+- Premium dashcam product catalog with specs and video demos
+- Yoco secured checkout (credit card, debit card, QR code)
+- Province-based shipping (R99 Gauteng / R129 other provinces / free over R1,500)
+- Phone OTP authentication via Supabase
+- Order tracking and SMS notifications
+- Vendor dashboard with analytics
+- Driver delivery management
+- Customer reviews and ratings
+- Admin analytics dashboard
 
-### Week 2: Commerce
-- ⏳ Order management
-- ⏳ Driver assignment
-- ⏳ SMS notifications
-- ⏳ WhatsApp bot
+## Deployment (Railway)
 
-### Week 3: Polish
-- ⏳ Bug fixes
-- ⏳ Mobile optimization
-- ⏳ Performance improvements
+1. Connect your GitHub repo to Railway
+2. Set environment variables in Railway dashboard (see `.env.example`)
+3. Add `STANDALONE_BUILD=true` to Railway env vars
+4. Railway will auto-deploy using `railway.toml` config
 
-### Week 4: Launch
-- ⏳ Vendor onboarding
-- ⏳ Product uploads
-- ⏳ Testing
-- ⏳ 🚀 LAUNCH
-
-## 🔑 Environment Variables
+## Environment Variables
 
 See `.env.example` for required environment variables.
 
-## 📅 Sprint Progress
-
-**Current Day:** 1 / 30
-**Start Date:** October 27, 2025
-**Launch Date:** November 25, 2025
-
-## 🙏 Philosophy
+## Philosophy
 
 *"I can do all things through Christ who strengthens me."* - Philippians 4:13
 
-## 📄 License
+## License
 
 ISC

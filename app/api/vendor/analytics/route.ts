@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
       select: { id: true },
     });
 
-    const storeIds = stores.map((store) => store.id);
+    const storeIds = stores.map((store: any) => store.id);
 
     if (storeIds.length === 0) {
       return NextResponse.json({
@@ -171,7 +171,7 @@ export async function GET(request: NextRequest) {
 
     // Get product details for top products
     const topProducts = await Promise.all(
-      topProductsData.map(async (item) => {
+      topProductsData.map(async (item: any) => {
         const product = await prisma.product.findUnique({
           where: { id: item.productId },
           select: {
@@ -209,7 +209,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Format sales by day
-    const formattedSalesByDay = salesByDay.map((day) => ({
+    const formattedSalesByDay = salesByDay.map((day: any) => ({
       date: day.createdAt.toISOString().split('T')[0],
       revenue: day._sum.subtotal || 0,
       orders: day._count,
@@ -225,12 +225,12 @@ export async function GET(request: NextRequest) {
         totalProducts,
         activeProducts,
         averageOrderValue,
-        recentOrders: recentOrders.map((order) => ({
+        recentOrders: recentOrders.map((order: any) => ({
           id: order.id,
           orderNumber: order.orderNumber,
           status: order.status,
           total: order.total,
-          itemCount: order.items.reduce((sum, item) => sum + item.quantity, 0),
+          itemCount: order.items.reduce((sum: any, item: any) => sum + item.quantity, 0),
           customerName: order.customer.name || 'Customer',
           createdAt: order.createdAt,
         })),

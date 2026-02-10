@@ -11,44 +11,50 @@ export async function GET(request: Request) {
         products: [
           {
             id: '1',
-            name: 'Fresh Tomatoes',
-            description: 'Locally grown ripe tomatoes',
-            price: 15.99,
+            name: 'BM Pro Dashcam 1080P',
+            description: 'Full 1080P HD recording with 170-degree ultra-wide angle lens. Night vision, G-sensor crash detection, and loop recording.',
+            price: 790.0,
             imageUrl: null,
             stock: 50,
             isActive: true,
+            category: 'SECURITY_DASHCAM',
+            sku: 'BM-DC-001',
             store: {
               id: '1',
-              name: 'Green Valley Farm',
-              subscriptionTier: 'FREE',
+              name: 'BLAQMART Security',
+              subscriptionTier: 'ENTERPRISE',
             },
           },
           {
             id: '2',
-            name: 'White Bread',
-            description: 'Freshly baked white bread',
-            price: 12.50,
+            name: 'BM Dual Dashcam Front + Rear',
+            description: 'Front 1080P + Rear 720P simultaneous recording with 170-degree front and 140-degree rear coverage.',
+            price: 1290.0,
             imageUrl: null,
             stock: 30,
             isActive: true,
+            category: 'SECURITY_DASHCAM',
+            sku: 'BM-DC-002',
             store: {
-              id: '2',
-              name: 'Warrenton Bakery',
-              subscriptionTier: 'PREMIUM',
+              id: '1',
+              name: 'BLAQMART Security',
+              subscriptionTier: 'ENTERPRISE',
             },
           },
           {
             id: '3',
-            name: 'Fresh Milk 2L',
-            description: 'Full cream fresh milk',
-            price: 22.99,
+            name: 'BM 4K Ultra Dashcam',
+            description: '4K Ultra HD with built-in WiFi, GPS tracking, and premium WDR night vision.',
+            price: 1890.0,
             imageUrl: null,
-            stock: 40,
+            stock: 20,
             isActive: true,
+            category: 'SECURITY_DASHCAM',
+            sku: 'BM-DC-003',
             store: {
               id: '1',
-              name: 'Green Valley Farm',
-              subscriptionTier: 'FREE',
+              name: 'BLAQMART Security',
+              subscriptionTier: 'ENTERPRISE',
             },
           },
         ],
@@ -60,6 +66,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const storeId = searchParams.get('storeId');
     const search = searchParams.get('search');
+    const category = searchParams.get('category');
     const minPrice = searchParams.get('minPrice');
     const maxPrice = searchParams.get('maxPrice');
     const sortBy = searchParams.get('sortBy') || 'newest';
@@ -69,7 +76,14 @@ export async function GET(request: Request) {
     // Build where clause
     const where: any = {
       isActive: true,
+      // Default: exclude grocery products
+      category: { not: 'GROCERY' },
     };
+
+    // Filter by specific category if provided
+    if (category) {
+      where.category = category;
+    }
 
     if (storeId) {
       where.storeId = storeId;
@@ -160,7 +174,7 @@ export async function POST(request: Request) {
     // TODO: Add authentication check
     // For now, require storeId in body
     const body = await request.json();
-    const { name, description, price, imageUrl, stock, storeId } = body;
+    const { name, description, price, imageUrl, images, videoUrl, stock, storeId, category, sku, weight, specs } = body;
 
     // Validation
     if (!name || !price || !storeId) {
@@ -194,8 +208,14 @@ export async function POST(request: Request) {
         description: description || null,
         price: parseFloat(price),
         imageUrl: imageUrl || null,
+        images: images || [],
+        videoUrl: videoUrl || null,
         stock: parseInt(stock) || 0,
         storeId,
+        category: category || 'GROCERY',
+        sku: sku || null,
+        weight: weight ? parseFloat(weight) : null,
+        specs: specs || null,
         isActive: true,
       },
       include: {

@@ -19,14 +19,14 @@
 
 ## 🎯 Overview
 
-BLAQMART is a local e-commerce marketplace platform connecting vendors and customers in Warrenton, South Africa. It provides fast delivery from local businesses with a focus on fresh groceries and essential products.
+BLAQMART is a nationwide South African e-commerce store specializing in premium dashcams and security products. We deliver across all 9 provinces with province-based shipping rates.
 
 ### Key Value Propositions
 
-- ✅ **Fast Delivery:** 45-minute delivery promise
-- ✅ **Local Focus:** Support Warrenton businesses
-- ✅ **Quality Guaranteed:** Fresh products every time
-- ✅ **Open Daily:** 7 days a week ordering
+- ✅ **Nationwide Shipping:** 3-5 business day delivery across South Africa
+- ✅ **Security First:** Premium dashcams and security products
+- ✅ **Quality Guaranteed:** Trusted brands with warranty
+- ✅ **24/7 Online:** Order anytime, anywhere
 
 ---
 
@@ -77,9 +77,9 @@ BLAQMART is a local e-commerce marketplace platform connecting vendors and custo
 
 #### Mock Data:
 If Prisma is not set up, the system automatically returns sample products:
-- Fresh Tomatoes (R15.99)
-- White Bread (R12.50)
-- Fresh Milk 2L (R22.99)
+- BM Pro Dashcam 1080P (R899.99)
+- 32GB MicroSD Card (R149.99)
+- Suction Cup Mount (R89.99)
 
 This allows testing without database configuration.
 
@@ -92,15 +92,15 @@ This allows testing without database configuration.
 #### Sections:
 
 1. **Hero Section**
-   - Bold headline: "Shop Local in Warrenton"
+   - Bold headline: "Drive Protected. Record Everything."
    - Call-to-action buttons: Browse Products, Become a Vendor
    - Responsive design with gradient background
 
 2. **Features Section**
-   - Fast Delivery (45 min or less)
-   - Local Products (Support Warrenton)
-   - Quality Guaranteed (Fresh every time)
-   - Open Daily (7 days a week)
+   - Nationwide Shipping (3-5 business days)
+   - Security Products (Premium dashcams)
+   - Quality Guaranteed (Trusted brands with warranty)
+   - 24/7 Online (Order anytime, anywhere)
 
 3. **Product Catalog**
    - Live product search
@@ -243,15 +243,15 @@ List all active products.
   "products": [
     {
       "id": "uuid",
-      "name": "Fresh Tomatoes",
-      "description": "Locally grown ripe tomatoes",
-      "price": 15.99,
+      "name": "BM Pro Dashcam 1080P",
+      "description": "Full HD 1080P dashcam with night vision and loop recording",
+      "price": 899.99,
       "imageUrl": null,
-      "stock": 50,
+      "stock": 25,
       "isActive": true,
       "store": {
         "id": "uuid",
-        "name": "Green Valley Farm",
+        "name": "BLAQMART Security",
         "subscriptionTier": "FREE"
       }
     }
@@ -275,11 +275,11 @@ Create a new product.
 **Request:**
 ```json
 {
-  "name": "Fresh Bananas",
-  "description": "Organic bananas",
-  "price": 12.99,
+  "name": "32GB MicroSD Card",
+  "description": "High-speed memory card for dashcam recording",
+  "price": 149.99,
   "imageUrl": "https://...",
-  "stock": 30,
+  "stock": 100,
   "storeId": "uuid"
 }
 ```
@@ -288,8 +288,8 @@ Create a new product.
 ```json
 {
   "id": "uuid",
-  "name": "Fresh Bananas",
-  "price": 12.99,
+  "name": "32GB MicroSD Card",
+  "price": 149.99,
   ...
 }
 ```
@@ -310,16 +310,16 @@ Get product details by ID.
 ```json
 {
   "id": "uuid",
-  "name": "Fresh Tomatoes",
-  "description": "Locally grown ripe tomatoes",
-  "price": 15.99,
+  "name": "BM Pro Dashcam 1080P",
+  "description": "Full HD 1080P dashcam with night vision and loop recording",
+  "price": 899.99,
   "imageUrl": null,
-  "stock": 50,
+  "stock": 25,
   "isActive": true,
   "store": {
     "id": "uuid",
-    "name": "Green Valley Farm",
-    "address": "123 Farm Road, Warrenton",
+    "name": "BLAQMART Security",
+    "address": "Online Store - Nationwide Delivery",
     "phone": "0812345678",
     "subscriptionTier": "FREE"
   }
@@ -342,9 +342,9 @@ Update product details.
 **Request:**
 ```json
 {
-  "name": "Fresh Red Tomatoes",
-  "price": 16.99,
-  "stock": 45
+  "name": "BM Pro Dashcam 1080P - Updated",
+  "price": 949.99,
+  "stock": 20
 }
 ```
 
@@ -659,7 +659,7 @@ function MyComponent() {
 - endDate (DateTime)
 - isActive (Boolean)
 - paymentStatus (Enum)
-- payfastPaymentId (String, Optional)
+- paymentId (String, Optional)
 
 ### Coming Soon:
 - Order
@@ -689,7 +689,7 @@ function MyComponent() {
 
 ### External Services
 - **Auth:** Supabase (Phone OTP)
-- **Payments:** PayFast (coming Weekend)
+- **Payments:** Yoco Online Checkout
 - **SMS:** Twilio (coming Day 9-10)
 - **Images:** Cloudinary (coming Week 3)
 
@@ -699,7 +699,7 @@ function MyComponent() {
 - **Type Checking:** TypeScript strict mode
 
 ### Deployment (Coming Week 4)
-- **Hosting:** Vercel
+- **Hosting:** Railway
 - **Database:** Supabase Production
 - **Domain:** blaqmart.co.za (TBD)
 
@@ -720,10 +720,10 @@ function MyComponent() {
 - Cart persistence (localStorage)
 - Cart page
 
-### Weekend: Checkout + PayFast
+### Weekend: Checkout + Yoco
 - Checkout page
-- Address input with geocoding
-- PayFast payment integration
+- Shipping address with province selection
+- Yoco Online Checkout payment integration
 - Order creation
 - Order confirmation page
 
@@ -738,7 +738,7 @@ Week 1: FOUNDATION (Days 1-7)
 ├── Day 3: ✅ Product Catalog
 ├── Day 4: ⏳ Vendor Dashboard
 ├── Day 5: ⏳ Shopping Cart
-└── Weekend: ⏳ Checkout + PayFast
+└── Weekend: ⏳ Checkout + Yoco
 
 Week 2: COMMERCE (Days 8-14)
 └── Coming soon...

@@ -47,12 +47,12 @@ export async function GET(request: NextRequest) {
 
     // Calculate statistics
     const totalPaid = payouts
-      .filter((p) => p.status === 'PAID')
-      .reduce((sum, p) => sum + p.netAmount, 0);
+      .filter((p: any) => p.status === 'PAID')
+      .reduce((sum: any, p: any) => sum + p.netAmount, 0);
 
     const totalPending = payouts
-      .filter((p) => p.status === 'PENDING' || p.status === 'PROCESSING')
-      .reduce((sum, p) => sum + p.netAmount, 0);
+      .filter((p: any) => p.status === 'PENDING' || p.status === 'PROCESSING')
+      .reduce((sum: any, p: any) => sum + p.netAmount, 0);
 
     return NextResponse.json({
       success: true,
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
         totalPending,
         totalPayouts: payouts.length,
       },
-      payouts: payouts.map((payout) => ({
+      payouts: payouts.map((payout: any) => ({
         id: payout.id,
         amount: payout.amount,
         netAmount: payout.netAmount,

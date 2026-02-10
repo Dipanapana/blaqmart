@@ -100,7 +100,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      conversations: conversations.map((conv) => ({
+      conversations: conversations.map((conv: any) => ({
         id: conv.id,
         subject: conv.subject,
         status: conv.status,

@@ -8,10 +8,19 @@ import Header from '@/components/Header';
 import { useCartStore } from '@/lib/store/cart-store';
 import { useAuth } from '@/lib/auth-context';
 import { formatCurrency } from '@/lib/utils';
-import { ArrowLeft, MapPin, Phone, Loader2, CreditCard, ShoppingBag } from 'lucide-react';
+import {
+  PROVINCES,
+  PROVINCE_DISPLAY_NAMES,
+  FREE_SHIPPING_THRESHOLD,
+} from '@/lib/shipping';
+import { ArrowLeft, MapPin, Phone, Loader2, CreditCard, ShoppingBag, Truck, Camera } from 'lucide-react';
 
-interface DeliveryInfo {
-  address: string;
+interface ShippingInfo {
+  street: string;
+  suburb: string;
+  city: string;
+  province: string;
+  postalCode: string;
   phone: string;
   notes: string;
 }
@@ -19,43 +28,58 @@ interface DeliveryInfo {
 export default function CheckoutPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const { items, getSubtotal, getDeliveryFee, getTotal } = useCartStore();
+  const { items, getSubtotal, getShippingFee, getTotal, province, setProvince } = useCartStore();
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<Partial<DeliveryInfo>>({});
+  const [errors, setErrors] = useState<Partial<ShippingInfo>>({});
 
-  const [deliveryInfo, setDeliveryInfo] = useState<DeliveryInfo>({
-    address: '',
+  const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
+    street: '',
+    suburb: '',
+    city: '',
+    province: province || '',
+    postalCode: '',
     phone: user?.phone || '',
     notes: '',
   });
 
-  // Update phone when user loads
   useEffect(() => {
     if (user?.phone) {
-      setDeliveryInfo(prev => ({ ...prev, phone: user.phone }));
+      setShippingInfo(prev => ({ ...prev, phone: user.phone || '' }));
     }
   }, [user]);
 
-  // Redirect if cart is empty
+  useEffect(() => {
+    if (shippingInfo.province) {
+      setProvince(shippingInfo.province);
+    }
+  }, [shippingInfo.province, setProvince]);
+
   useEffect(() => {
     if (items.length === 0) {
       router.push('/cart');
     }
   }, [items, router]);
 
-  // Validate form
   const validateForm = (): boolean => {
-    const newErrors: Partial<DeliveryInfo> = {};
+    const newErrors: Partial<ShippingInfo> = {};
 
-    if (!deliveryInfo.address.trim()) {
-      newErrors.address = 'Delivery address is required';
-    } else if (deliveryInfo.address.trim().length < 10) {
-      newErrors.address = 'Please provide a complete address';
+    if (!shippingInfo.street.trim()) {
+      newErrors.street = 'Street address is required';
     }
-
-    if (!deliveryInfo.phone.trim()) {
+    if (!shippingInfo.city.trim()) {
+      newErrors.city = 'City is required';
+    }
+    if (!shippingInfo.province) {
+      newErrors.province = 'Province is required';
+    }
+    if (!shippingInfo.postalCode.trim()) {
+      newErrors.postalCode = 'Postal code is required';
+    } else if (!/^\d{4}$/.test(shippingInfo.postalCode)) {
+      newErrors.postalCode = 'Must be a 4-digit postal code';
+    }
+    if (!shippingInfo.phone.trim()) {
       newErrors.phone = 'Phone number is required';
-    } else if (!/^\+27\d{9}$/.test(deliveryInfo.phone)) {
+    } else if (!/^\+27\d{9}$/.test(shippingInfo.phone)) {
       newErrors.phone = 'Phone must be in format +27XXXXXXXXX';
     }
 
@@ -64,10 +88,7 @@ export default function CheckoutPage() {
   };
 
   const handleCheckout = async () => {
-    if (!validateForm()) {
-      return;
-    }
-
+    if (!validateForm()) return;
     if (!user) {
       alert('Please log in to continue');
       return;
@@ -76,14 +97,22 @@ export default function CheckoutPage() {
     setLoading(true);
 
     try {
-      // Create order
+      const deliveryAddress = [
+        shippingInfo.street,
+        shippingInfo.suburb,
+        shippingInfo.city,
+        PROVINCE_DISPLAY_NAMES[shippingInfo.province],
+        shippingInfo.postalCode,
+      ].filter(Boolean).join(', ');
+
       const orderResponse = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          deliveryAddress: deliveryInfo.address,
-          customerPhone: deliveryInfo.phone,
-          notes: deliveryInfo.notes,
+          deliveryAddress,
+          customerPhone: shippingInfo.phone,
+          notes: shippingInfo.notes,
+          province: shippingInfo.province,
           items: items.map(item => ({
             productId: item.productId,
             quantity: item.quantity,
@@ -98,7 +127,6 @@ export default function CheckoutPage() {
 
       const { order } = await orderResponse.json();
 
-      // Initiate PayFast payment
       const paymentResponse = await fetch('/api/payment/initiate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -113,8 +141,6 @@ export default function CheckoutPage() {
       }
 
       const { paymentUrl } = await paymentResponse.json();
-
-      // Redirect to PayFast
       window.location.href = paymentUrl;
     } catch (error) {
       console.error('Checkout error:', error);
@@ -125,127 +151,191 @@ export default function CheckoutPage() {
   };
 
   if (items.length === 0) {
-    return null; // Will redirect
+    return null;
   }
 
   const subtotal = getSubtotal();
-  const deliveryFee = getDeliveryFee();
+  const shippingFee = getShippingFee();
   const total = getTotal();
 
+  const inputClasses = (field: string) =>
+    `w-full px-4 py-3 bg-slate-800 border rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+      errors[field as keyof ShippingInfo] ? 'border-red-500' : 'border-slate-600'
+    }`;
+
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="min-h-screen bg-slate-950">
       <Header />
 
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Back to cart */}
         <Link
           href="/cart"
-          className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6"
+          className="inline-flex items-center gap-2 text-slate-400 hover:text-white mb-6 transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
           Back to cart
         </Link>
 
-        <h1 className="text-3xl font-bold mb-8">Checkout</h1>
+        <h1 className="text-3xl font-bold text-white mb-8">Checkout</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Delivery Information */}
+          {/* Shipping Information */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Delivery Address */}
-            <div className="bg-white rounded-xl p-6 shadow-sm">
-              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-green-600" />
-                Delivery Information
+            <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
+              <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+                <Truck className="w-5 h-5 text-blue-500" />
+                Shipping Information
               </h2>
 
               <div className="space-y-4">
-                {/* Address */}
                 <div>
-                  <label htmlFor="address" className="block text-sm font-medium mb-2">
-                    Delivery Address *
+                  <label htmlFor="province" className="block text-sm font-medium text-slate-300 mb-2">
+                    Province *
                   </label>
-                  <textarea
-                    id="address"
-                    value={deliveryInfo.address}
+                  <select
+                    id="province"
+                    value={shippingInfo.province}
                     onChange={(e) => {
-                      setDeliveryInfo({ ...deliveryInfo, address: e.target.value });
-                      setErrors({ ...errors, address: undefined });
+                      setShippingInfo({ ...shippingInfo, province: e.target.value });
+                      setErrors({ ...errors, province: undefined });
                     }}
-                    placeholder="Enter your full delivery address (street, suburb, city)"
-                    rows={3}
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
-                      errors.address ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  />
-                  {errors.address && (
-                    <p className="text-sm text-red-600 mt-1">{errors.address}</p>
-                  )}
+                    className={inputClasses('province')}
+                  >
+                    <option value="">Select your province</option>
+                    {PROVINCES.map((p) => (
+                      <option key={p} value={p}>{PROVINCE_DISPLAY_NAMES[p]}</option>
+                    ))}
+                  </select>
+                  {errors.province && <p className="text-sm text-red-400 mt-1">{errors.province}</p>}
                 </div>
 
-                {/* Phone */}
                 <div>
-                  <label htmlFor="phone" className="block text-sm font-medium mb-2">
-                    Phone Number *
+                  <label htmlFor="street" className="block text-sm font-medium text-slate-300 mb-2">
+                    Street Address *
                   </label>
                   <input
-                    id="phone"
-                    type="tel"
-                    value={deliveryInfo.phone}
+                    id="street"
+                    type="text"
+                    value={shippingInfo.street}
                     onChange={(e) => {
-                      setDeliveryInfo({ ...deliveryInfo, phone: e.target.value });
-                      setErrors({ ...errors, phone: undefined });
+                      setShippingInfo({ ...shippingInfo, street: e.target.value });
+                      setErrors({ ...errors, street: undefined });
                     }}
-                    placeholder="+27XXXXXXXXX"
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
-                      errors.phone ? 'border-red-500' : 'border-gray-300'
-                    }`}
+                    placeholder="123 Main Road"
+                    className={inputClasses('street')}
                   />
-                  {errors.phone && (
-                    <p className="text-sm text-red-600 mt-1">{errors.phone}</p>
-                  )}
+                  {errors.street && <p className="text-sm text-red-400 mt-1">{errors.street}</p>}
                 </div>
 
-                {/* Notes */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="suburb" className="block text-sm font-medium text-slate-300 mb-2">
+                      Suburb
+                    </label>
+                    <input
+                      id="suburb"
+                      type="text"
+                      value={shippingInfo.suburb}
+                      onChange={(e) => setShippingInfo({ ...shippingInfo, suburb: e.target.value })}
+                      placeholder="Sandton"
+                      className={inputClasses('suburb')}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="city" className="block text-sm font-medium text-slate-300 mb-2">
+                      City *
+                    </label>
+                    <input
+                      id="city"
+                      type="text"
+                      value={shippingInfo.city}
+                      onChange={(e) => {
+                        setShippingInfo({ ...shippingInfo, city: e.target.value });
+                        setErrors({ ...errors, city: undefined });
+                      }}
+                      placeholder="Johannesburg"
+                      className={inputClasses('city')}
+                    />
+                    {errors.city && <p className="text-sm text-red-400 mt-1">{errors.city}</p>}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="postalCode" className="block text-sm font-medium text-slate-300 mb-2">
+                      Postal Code *
+                    </label>
+                    <input
+                      id="postalCode"
+                      type="text"
+                      value={shippingInfo.postalCode}
+                      onChange={(e) => {
+                        setShippingInfo({ ...shippingInfo, postalCode: e.target.value });
+                        setErrors({ ...errors, postalCode: undefined });
+                      }}
+                      placeholder="2196"
+                      maxLength={4}
+                      className={inputClasses('postalCode')}
+                    />
+                    {errors.postalCode && <p className="text-sm text-red-400 mt-1">{errors.postalCode}</p>}
+                  </div>
+                  <div>
+                    <label htmlFor="phone" className="block text-sm font-medium text-slate-300 mb-2">
+                      Phone *
+                    </label>
+                    <input
+                      id="phone"
+                      type="tel"
+                      value={shippingInfo.phone}
+                      onChange={(e) => {
+                        setShippingInfo({ ...shippingInfo, phone: e.target.value });
+                        setErrors({ ...errors, phone: undefined });
+                      }}
+                      placeholder="+27XXXXXXXXX"
+                      className={inputClasses('phone')}
+                    />
+                    {errors.phone && <p className="text-sm text-red-400 mt-1">{errors.phone}</p>}
+                  </div>
+                </div>
+
                 <div>
-                  <label htmlFor="notes" className="block text-sm font-medium mb-2">
+                  <label htmlFor="notes" className="block text-sm font-medium text-slate-300 mb-2">
                     Delivery Notes (Optional)
                   </label>
                   <textarea
                     id="notes"
-                    value={deliveryInfo.notes}
-                    onChange={(e) => setDeliveryInfo({ ...deliveryInfo, notes: e.target.value })}
-                    placeholder="Any special instructions for delivery?"
+                    value={shippingInfo.notes}
+                    onChange={(e) => setShippingInfo({ ...shippingInfo, notes: e.target.value })}
+                    placeholder="Gate code, complex name, special instructions..."
                     rows={2}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
               </div>
             </div>
 
-            {/* Payment Method */}
-            <div className="bg-white rounded-xl p-6 shadow-sm">
-              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                <CreditCard className="w-5 h-5 text-green-600" />
+            {/* Payment */}
+            <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
+              <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+                <CreditCard className="w-5 h-5 text-blue-500" />
                 Payment Method
               </h2>
 
-              <div className="border-2 border-green-500 rounded-lg p-4 bg-green-50">
+              <div className="border-2 border-blue-500/50 rounded-lg p-4 bg-blue-600/10">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center">
+                  <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
                     <CreditCard className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">PayFast</h3>
-                    <p className="text-sm text-gray-600">
-                      Secure payment via credit card, debit card, or EFT
-                    </p>
+                    <h3 className="font-semibold text-white">Yoco</h3>
+                    <p className="text-sm text-slate-400">Credit card, debit card, or QR code</p>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <p className="text-sm text-blue-800">
-                  You will be redirected to PayFast to complete your payment securely.
+              <div className="mt-4 bg-slate-700/50 rounded-lg p-3">
+                <p className="text-sm text-slate-300">
+                  You will be redirected to Yoco to complete your payment securely.
                 </p>
               </div>
             </div>
@@ -253,78 +343,74 @@ export default function CheckoutPage() {
 
           {/* Order Summary */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl p-6 shadow-sm sticky top-4">
-              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                <ShoppingBag className="w-5 h-5 text-green-600" />
+            <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 sticky top-24">
+              <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+                <ShoppingBag className="w-5 h-5 text-blue-500" />
                 Order Summary
               </h2>
 
-              {/* Cart Items */}
               <div className="space-y-3 mb-4 max-h-60 overflow-y-auto">
                 {items.map((item) => (
                   <div key={item.id} className="flex gap-3">
-                    <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                    <div className="w-14 h-14 bg-slate-900 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center">
                       {item.imageUrl ? (
                         <Image
                           src={item.imageUrl}
                           alt={item.name}
-                          width={64}
-                          height={64}
+                          width={56}
+                          height={56}
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full bg-gray-200" />
+                        <Camera className="w-6 h-6 text-slate-600" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-sm truncate">{item.name}</h3>
-                      <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
+                      <h3 className="font-medium text-sm text-white truncate">{item.name}</h3>
+                      <p className="text-sm text-slate-400">Qty: {item.quantity}</p>
                     </div>
-                    <div className="text-sm font-semibold">
+                    <div className="text-sm font-semibold text-white">
                       {formatCurrency(item.price * item.quantity)}
                     </div>
                   </div>
                 ))}
               </div>
 
-              {/* Pricing Summary */}
-              <div className="border-t pt-4 space-y-2">
+              <div className="border-t border-slate-700 pt-4 space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Subtotal</span>
-                  <span className="font-semibold">{formatCurrency(subtotal)}</span>
+                  <span className="text-slate-400">Subtotal</span>
+                  <span className="font-semibold text-white">{formatCurrency(subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Delivery Fee</span>
+                  <span className="text-slate-400">Shipping</span>
                   <span className="font-semibold">
-                    {deliveryFee === 0 ? (
-                      <span className="text-green-600">FREE</span>
+                    {!shippingInfo.province ? (
+                      <span className="text-slate-500">-</span>
+                    ) : shippingFee === 0 ? (
+                      <span className="text-green-400">FREE</span>
                     ) : (
-                      formatCurrency(deliveryFee)
+                      <span className="text-white">{formatCurrency(shippingFee)}</span>
                     )}
                   </span>
                 </div>
-                <div className="border-t pt-2 flex justify-between">
-                  <span className="font-bold text-lg">Total</span>
-                  <span className="font-bold text-lg text-green-600">
-                    {formatCurrency(total)}
-                  </span>
+                <div className="border-t border-slate-700 pt-2 flex justify-between">
+                  <span className="font-bold text-lg text-white">Total</span>
+                  <span className="font-bold text-lg text-blue-400">{formatCurrency(total)}</span>
                 </div>
               </div>
 
-              {/* Free delivery notice */}
-              {deliveryFee === 0 && (
-                <div className="mt-3 bg-green-50 border border-green-200 rounded-lg p-2">
-                  <p className="text-sm text-green-700 text-center font-medium">
-                    🎉 You qualify for free delivery!
+              {shippingFee === 0 && shippingInfo.province && (
+                <div className="mt-3 bg-green-600/10 border border-green-600/20 rounded-lg p-2">
+                  <p className="text-sm text-green-400 text-center font-medium">
+                    You qualify for free shipping!
                   </p>
                 </div>
               )}
 
-              {/* Checkout Button */}
               <button
                 onClick={handleCheckout}
                 disabled={loading || !user}
-                className="w-full mt-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full mt-6 py-3.5 bg-blue-600 text-white rounded-xl hover:bg-blue-500 font-semibold disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all hover:shadow-lg hover:shadow-blue-600/25"
               >
                 {loading ? (
                   <>
@@ -340,19 +426,20 @@ export default function CheckoutPage() {
               </button>
 
               {!user && (
-                <p className="text-sm text-red-600 text-center mt-2">
-                  Please log in to complete checkout
+                <p className="text-sm text-red-400 text-center mt-2">
+                  Please sign in to complete checkout
                 </p>
               )}
 
-              {/* Trust badges */}
-              <div className="mt-4 pt-4 border-t">
-                <div className="flex items-center justify-center gap-4 text-xs text-gray-500">
+              <div className="mt-4 pt-4 border-t border-slate-700">
+                <div className="flex items-center justify-center gap-4 text-xs text-slate-500">
                   <span className="flex items-center gap-1">
-                    🔒 Secure Payment
+                    <CreditCard className="w-3 h-3" />
+                    Secure Payment
                   </span>
                   <span className="flex items-center gap-1">
-                    ✓ Money-back Guarantee
+                    <Truck className="w-3 h-3" />
+                    Nationwide Courier
                   </span>
                 </div>
               </div>

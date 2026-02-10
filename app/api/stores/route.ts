@@ -97,8 +97,8 @@ export async function POST(request: Request) {
         name,
         address,
         phone,
-        latitude: latitude || -27.7069, // Default Warrenton coordinates
-        longitude: longitude || 28.2294,
+        latitude: latitude || -26.2041, // Default Johannesburg coordinates
+        longitude: longitude || 28.0473,
         vendorId: dbUser.id,
         isActive: true,
       },
